@@ -1,6 +1,49 @@
 /* TODO:
-* Random index into training trial array OR shuffle that array 
+* Double check data storage 
 */
+
+/* Call Maker getter to get cond variables
+ * Takes number and counts for each condition
+ * Returns a condition number 
+ */
+
+try { 
+    var filename = "KM_act_learn_pilot2";
+    var condCounts = "1,5;2,5;3,5;4,5";  
+    var xmlHttp = null;
+    xmlHttp = new XMLHttpRequest();
+    xmlHttp.open( "GET", "https://langcog.stanford.edu/cgi-bin/subject_equalizer/maker_getter.php?conds=" + condCounts + "&filename=" + filename, false );
+    xmlHttp.send( null );
+    var cond = xmlHttp.responseText; // For actual experimental runs
+} catch (e) {
+    var cond = 1;
+}
+
+console.log("cond is: " + cond);
+
+
+var order, training_condition;
+
+/* Set up experiment based on condition */
+
+switch (cond) {
+    case "1":
+        training_condition = "active";
+        order = "order1";
+        break;
+    case "2":
+        training_condition = "receptive";
+        order = "order1";
+        break;
+    case "3":
+        training_condition = "active";
+        order = "order2";
+        break;
+    case "4":
+        training_condition = "receptive";
+        order = "order2";
+        break;
+}
 
 
 /*Shows slides. We're using jQuery here the $ is the jQuery selector function, 
@@ -132,7 +175,15 @@ var min_orientation = 0;
 var max_orientation = 150;
 var orientation_range = max_orientation - min_orientation;
 var third_orientation_scale = orientation_range / 3;
+
+/* Experiment logic */
 var num_correct_in_block = 0;
+var num_blocks = 6;
+var num_trials_block = 48;
+var num_trials = num_trials_block * num_blocks;
+var num_training_trials_block = 16;
+var num_training_trials_experiment = num_training_trials_block * num_blocks
+var num_test_trials_block = 32;
 
 /* parameter values for training trials: 
 * generated from gaussians (done in R) 
@@ -191,21 +242,45 @@ var test_orientations_stim = convertParamStim(test_orientations_param, scale_fac
 // wrap in array of json objects for each antenna
 var order1_antennas = [], order2_antennas = [], test_antennas = [], antenna_a, antenna_b;
 
-// create array of training stimuli for Order 1 (48 antenna from each category)
-for(i = 0; i < 48; i++) {
-  antenna_a = {
-    radius: catA1radii_stim.shift(),
-    angle: catA1orientations_stim.shift(),
-    category: "A"
-  }
+// create array of training stimuli for Order 1 
+// if in the active training, then randomly generate starting radius/orientation values
+for(i = 0; i < num_blocks; i++) {
+    var antennas_block = [];
+    for(j = 0; j < num_training_trials_block / 2; j++) {
+      if(training_condition == "active") {
+          antenna_a = {
+              radius: random(radius_lower_limit, radius_upper_limit),
+              angle: random(rotation_lower_limit, rotation_upper_limit),
+              category: "NA",
+              block: i + 1
+          };
 
-  antenna_b = {
-    radius: catB1radii_stim.shift(),
-    angle: catB1orientations_stim.shift(),
-    category: "B"
-  }
-  order1_antennas.push(antenna_a);
-  order1_antennas.push(antenna_b);
+          antenna_b = {
+              radius: random(radius_lower_limit, radius_upper_limit),
+              angle: random(rotation_lower_limit, rotation_upper_limit),
+              category: "NA",
+              block: i + 1
+          };
+      } else {
+          antenna_a = {
+              radius: catA1radii_stim.shift(),
+              angle: catA1orientations_stim.shift(),
+              category: "A",
+              block: i + 1
+          };
+
+          antenna_b = {
+            radius: catB1radii_stim.shift(),
+            angle: catB1orientations_stim.shift(),
+            category: "B",
+            block: i + 1
+          };
+      }
+        antennas_block.push(antenna_a);
+        antennas_block.push(antenna_b);
+    }
+    //shuffle block and push into training trials array
+    order1_antennas.push(shuffle(antennas_block));  
 }
 
 // now do the same thing for Order 2
@@ -214,33 +289,65 @@ var catA2orientations_stim = shuffle(convertParamStim(catA2orientations_param, s
 var catB2radii_stim = shuffle(convertParamStim(catB2radii_param, scale_factor_radius, radius_lower_limit));
 var catB2orientations_stim = shuffle(convertParamStim(catB2orientations_param, scale_factor_orienation, rotation_lower_limit));
 
-for(i = 0; i < 48; i++) {
-  antenna_a = {
-    radius: catA2radii_stim.shift(),
-    angle: catA2orientations_stim.shift(),
-    category: "A"
-  }
+// create array of training stimuli for Order 2 (48 antenna from each category)
+for(i = 0; i < num_blocks; i++) {
+    var antennas_block = [];
+    for(j = 0; j < num_training_trials_block / 2; j++) {
+      if(training_condition == "active") {
+          antenna_a = {
+              radius: random(radius_lower_limit, radius_upper_limit),
+              angle: random(rotation_lower_limit, rotation_upper_limit),
+              category: "NA",
+              block: i + 1
+          };
 
-  antenna_b = {
-    radius: catB2radii_stim.shift(),
-    angle: catB2orientations_stim.shift(),
-    category: "B"
-  }
-  order2_antennas.push(antenna_a);
-  order2_antennas.push(antenna_b);
+          antenna_b = {
+              radius: random(radius_lower_limit, radius_upper_limit),
+              angle: random(rotation_lower_limit, rotation_upper_limit),
+              category: "NA",
+              block: i + 1
+          };
+      } else {
+          antenna_a = {
+              radius: catA2radii_stim.shift(),
+              angle: catA2orientations_stim.shift(),
+              category: "A",
+              block: i + 1
+          };
+
+          antenna_b = {
+            radius: catB2radii_stim.shift(),
+            angle: catB2orientations_stim.shift(),
+            category: "B",
+            block: i + 1
+          };
+      }
+        antennas_block.push(antenna_a);
+        antennas_block.push(antenna_b);
+    }
+    //shuffle block and push into training trials array
+    order2_antennas.push(shuffle(antennas_block));  
 }
 
 // create array of test antennas
 var num_test_trials = 192, test_antenna_stim, test_antennas_stim = [];
 
-for(i = 0; i < num_test_trials; i++) {
-  test_antenna_stim = {
-    radius: test_radii_stim.shift(),
-    angle: test_orientations_stim.shift(),
-  }
 
-  test_antennas_stim.push(test_antenna_stim);
+for(i = 0; i < num_blocks; i++) {
+  var test_antennas_block = [];
+  for(j = 0; j < num_test_trials_block; j++) {
+    // get antenna values
+    test_antenna_stim = {
+      radius: test_radii_stim.shift(),
+      angle: test_orientations_stim.shift(),
+    }
+    // push into block array
+    test_antennas_block.push(test_antenna_stim);
+  }
+  test_antennas_stim.push(test_antennas_block);
 }
+
+console.log(test_antennas_stim);
 
 //draw raphael canvas
 var paper = Raphael("antenna", paper_width, paper_height);
@@ -249,56 +356,7 @@ var paper = Raphael("antenna", paper_width, paper_height);
 var centerX = paper_width / 2;
 var centerY = paper_height / 2;
 
-/*Experiment logic*/
-var num_blocks = 6;
-var num_trials_block = 48;
-var num_trials = num_trials_block * num_blocks;
-var num_training_trials_block = 16;
-var num_test_trials_block = 32;
-
-
-/* Call Maker getter to get cond variables
- * Takes number and counts for each condition
- * Returns a condition number 
- */
-
-/*try { 
-    var filename = "KM_act_learn_pilot";
-    var condCounts = "1,5;2,5";  
-    var xmlHttp = null;
-    xmlHttp = new XMLHttpRequest();
-    xmlHttp.open( "GET", "https://langcog.stanford.edu/cgi-bin/subject_equalizer/maker_getter.php?conds=" + condCounts + "&filename=" + filename, false );
-    xmlHttp.send( null );
-    var cond = xmlHttp.responseText; // For actual experimental runs
-    //var cond = random(1,2); // note for testing experiment
-} catch (e) {
-    var cond = 1;
-}
-*/
-
-var cond = "2", order, training_condition;
-
-/* Set up experiment based on condition */
-
-switch (cond) {
-    case "1":
-        training_condition = "active";
-        order = "order1";
-        break;
-    case "2":
-        training_condition = "receptive";
-        order = "order2";
-        break;
-    case "3":
-        training_condition = "active";
-        order = "order1";
-        break;
-    case "4":
-        training_condition = "receptive";
-        order = "order2";
-        break;
-}
-
+console.log("order is: " + order);
 
 /* get optimal decision boundary */
 var optimal_decision_boundary_param = [300];
@@ -333,25 +391,26 @@ for(i = 0; i < num_blocks; i++) {
         // if a training trial, grab radius and angle values from appropriate arrays
         if(trial_type == "training") {
           // order determines whether category is defined by radius or orienatation
-          // TODO: index into antennas array randomly
           if(order == "order1") {
-            training_trial = order1_antennas.shift();
+            training_trial = order1_antennas[i].shift(); // using i to index into antennas array
             trial_radius = training_trial.radius;
             trial_angle = training_trial.angle;
             trial_category = training_trial.category;
           } else { 
-            training_trial = order2_antennas.shift();
+            training_trial = order2_antennas[i].shift();
             trial_radius = training_trial.radius;
             trial_angle = training_trial.angle;
             trial_category = training_trial.category;
           }
           trial_number++; 
         } else { // get test trials
-            test_trial = test_antennas_stim.shift()
+            test_trial = test_antennas_stim[i].shift()
             trial_radius = test_trial.radius;
             trial_angle =  test_trial.angle;
             // figure out which category test antenna is from 
-            if(order == "order 1") {
+            // order 1 you check radius 
+            // order 2 you check orientation
+            if(order == "order1") {
               if(trial_radius < optimal_decision_boundary_stim) {
                 trial_category = "A";
               } else {
@@ -364,7 +423,7 @@ for(i = 0; i < num_blocks; i++) {
                 trial_category = "B";
               }
             }
-            trial_number++; 
+          trial_number++; 
         }
 
         trial_info = {
@@ -438,7 +497,7 @@ var experiment = {
   /*The function that gets called when the sequence is finished. */
   end: function() {
     // store values from q and a 
-    exp.subj_data = {
+    experiment.subj_data = {
         language : $("#language").val(),
         enjoyment : $("#enjoyment").val(),
         asses : $('input[name="assess"]:checked').val(),
@@ -447,6 +506,9 @@ var experiment = {
         education : $("#education").val(),
         comments : $("#comments").val(),
       };
+
+    console.log(experiment.subj_data);
+    console.log(experiment.data);
 
     // show finished slide
     showSlide("finished"); 
@@ -469,8 +531,8 @@ var experiment = {
     // hide category label
     $(".category_label").attr("style", "visibility: hidden") 
     // clear borders
-    $("#channel_1").css("border", "4px solid white")
-    $("#channel_2").css("border", "4px solid white")
+    $("#channel_1").css("border", "3px solid white")
+    $("#channel_2").css("border", "3px solid white")
     // reset slider
     $( "#single_slider" ).slider({
         range : "min",
@@ -497,9 +559,11 @@ var experiment = {
 
 /*The work horse of the sequence: what to do on every trial.*/
   next: function() {
-        // prevent default keyboard events
+        //disable default spacebar functionality 
         $(document).keydown(function(event) {
-          event.preventDefault();
+            if(event.which == 32){
+                return false;
+            }
         });
         /*some slider functionality stuff*/
         $(function() {
@@ -538,6 +602,8 @@ var experiment = {
         // if trial is undefined, we are done - go to q and a slide
         if (typeof trial == "undefined") {
             $(".progress").attr("style", "visibility: hidden")
+            // unbind keyboard event
+            $(document).unbind("keydown")
             return showSlide("qanda");
         }
         console.log("Trial info is: ")
@@ -547,13 +613,12 @@ var experiment = {
         // if between blocks we need to display cumulative accuracy during the block they just completed, 
         // as well as their accuracy during the preceding test block
 
-
         // set up slide depending on trial type
         if (trial.trial_type == "training" &  // this should be training
           training_condition == "active") {
                 $("#task_instructions").attr("style", "display: block");
                 $("#channel_label").attr("style", "display: block");
-                $("#channel_label").css("border", "4px solid white")
+                $("#channel_label").css("border", "3px solid white")
                 $("#receptive_instructions").attr("style", "display: none");
                 $("#category_table").attr("style", "display: none");
                 $("#slider_table").attr("style", "display: none");
@@ -564,7 +629,7 @@ var experiment = {
           training_condition == "receptive") {
                 $("#task_instructions").attr("style", "display: none");
                 $("#channel_label").attr("style", "display: block");
-                $("#channel_label").css("border", "4px solid white")
+                $("#channel_label").css("border", "3px solid white")
                 $("#receptive_instructions").attr("style", "display: block");
                 $("#category_table").attr("style", "display: none");
                 $("#slider_table").attr("style", "display: none");
@@ -574,7 +639,7 @@ var experiment = {
         } else {
                 $("#task_instructions").attr("style", "display: none");
                 $("#channel_label").attr("style", "display: none");
-                $("#channel_label").css("border", "4px solid white")
+                $("#channel_label").css("border", "3px solid white")
                 $("#receptive_instructions").attr("style", "display: none");
                 $("#slider_table").attr("style", "display: none");
                 $("#slider_instructions").attr("style", "display: none");
@@ -874,7 +939,7 @@ var experiment = {
                    switch(event.which) {
                     case keys["z"]:
                         if(trial.antenna_category == "A") {
-                          $("#channel_label").css("border", "4px solid green")
+                          $("#channel_label").css("border", "3px solid green")
                           logDataTraining();
                         } else {
                           alert("Press Z for Channel 1 and X for Channel 2");
@@ -882,7 +947,7 @@ var experiment = {
                         break;
                     case keys["x"]:
                         if(trial.antenna_category == "B") {
-                          $("#channel_label").css("border", "4px solid green")
+                          $("#channel_label").css("border", "3px solid green")
                           logDataTraining();
                         } else {
                           alert("Press Z for Channel 1 and X for Channel 2");
