@@ -1,0 +1,354 @@
+---
+title: "Act-Learn Analysis"
+author: "Kyle MacDonald"
+output: html_document
+---
+
+This script analyzes data from an experiment testing the effectiveness of active
+vs. passive training in a category learning task.
+
+# Libraries 
+
+```{r libraries, warning=F, message=F, comment=F}
+rm(list=ls())
+source("useful.R")
+```
+
+# Load data
+
+```{r load data}
+df <- read.csv("../data/act-learn-processed-data.csv")
+```
+
+# Exclusionary criteria
+
+Overall performance (averaged across blocks) was more than three stan- dard deviations below the mean of their group.
+
+```{r exclusionary}
+ss <- df %>%
+    filter(trial_type == "test") %>%
+    group_by(subids, condition) %>%
+    summarise(mean_accuracy = mean(correct),
+              ci_high_acc = ci.high(correct),
+              ci_low_acc = ci.low(correct))
+
+# get the mean and standard deviation of each group
+ms_ss <- ss %>%
+    group_by(condition) %>%
+    summarise(group_mean = mean(mean_accuracy),
+              group_sd = sd(mean_accuracy))
+
+m_act <- ms_ss$group_mean[ms_ss$condition == "active"]
+sd_act <- ms_ss$group_sd[ms_ss$condition == "active"]
+m_rec <- ms_ss$group_mean[ms_ss$condition == "receptive"]
+sd_rec <- ms_ss$group_sd[ms_ss$condition == "receptive"]
+
+# flag subject means that are +/- 3sd 
+ss_include <- ss %>%
+    mutate(include = ifelse(condition == "active", 
+                            ifelse(mean_accuracy > m_act + 3*sd_act | 
+                                       mean_accuracy < m_act - 3*sd_act, 0, 1),
+                            ifelse(mean_accuracy > m_rec + 3*sd_rec |
+                                mean_accuracy < m_rec - 3*sd_rec, 0, 1))) %>%
+    select(subids, include, condition) 
+
+ss_include %>%
+    group_by(condition, include) %>%
+    summarise(n())
+
+# merge with full data frame
+df <- inner_join(df, select(ss_include, subids, include), by = "subids")
+
+# filter out subjects that are +/- 3sd
+df <- df %>% filter(include == 1)
+```
+
+# Descriptives
+
+Get number of subjects in each condition and order.
+
+```{r descriptives, echo=F}
+df %>%
+    group_by(condition, odb_scale) %>%
+    summarise(n_subs = n_distinct(subids))
+```
+
+Histogram of dependent variable across blocks: correct categorization of antennas
+on test trials.
+
+```{r, echo=F}
+qplot(correct, data=filter(df, trial_type=="test"), facets = condition~block)
+```
+
+Historgram of length of experiment split by condition 
+
+```{r, echo=F}
+ss_rt <- df %>%
+    group_by(subids, condition) %>%
+    summarise(exp_length_min = sum(rt) / 60000)
+
+qplot(exp_length_min, data=ss_rt, facets=.~condition)
+```
+
+
+# Overall accuracy analysis 
+
+Get mean accuracy across all trials for each condition.
+
+```{r overall accuracy, echo=F}
+ms <- df %>%
+    filter(trial_type == "test") %>%
+    group_by(condition) %>%
+    summarise(mean_accuracy = mean(correct),
+              ci_high = ci.high(correct),
+              ci_low = ci.low(correct))
+```
+
+Plot mean accuracy.
+
+```{r mean acc plot, echo=F}
+qplot(x=condition, y=mean_accuracy, data=ms,
+      stat="identity",width=0.5, geom="bar", 
+      fill=condition) + 
+    coord_cartesian(ylim=c(0.5,1)) +
+    geom_bar(stat="identity", width=0.75, color="black") +
+    geom_linerange(aes(ymin=mean_accuracy - ci_low, 
+                       ymax=mean_accuracy + ci_high), size=1) +
+    scale_fill_grey(start=0.3, end=0.6) +
+    theme_classic() +
+    ylab("Mean Accuracy") +
+    xlab("Condition") +
+    theme_classic() +
+    theme(text = element_text(size=16))
+```
+
+Get mean accuracy for each condition and order
+
+```{r, echo=F}
+ms_order <- df %>%
+    filter(trial_type == "test") %>%
+    group_by(condition, odb_scale) %>%
+    summarise(mean_accuracy = mean(correct),
+              ci_high = ci.high(correct),
+              ci_low = ci.low(correct))
+```
+
+Plot.
+
+```{r mean acc plot condition/order, echo=F}
+qplot(x=condition, y=mean_accuracy, data=ms_order,
+      geom="bar", stat="identity", fill = condition,
+      facets=.~odb_scale) + 
+    geom_linerange(aes(ymin=mean_accuracy - ci_low, 
+        ymax=mean_accuracy + ci_high), 
+        width = .05, size=0.6) + 
+    scale_fill_grey(start=0.3, end=0.6) +
+    coord_cartesian(ylim=c(0.5,1)) +
+    theme_classic() +
+    ylab("Mean Accuracy") +
+    xlab("Condition") +
+    theme_classic() +
+    theme(text = element_text(size=16))
+```
+
+# Accuracy by block analysis
+
+```{r acc by block, echo=F}
+ms_block <- df %>%
+    filter(trial_type == "test") %>%
+    group_by(condition, block) %>%
+    summarise(mean_accuracy = mean(correct),
+              ci_high = ci.high(correct),
+              ci_low = ci.low(correct))
+```
+
+Plot accuracy over blocks
+
+```{r acc by block plot, echo=F}
+qplot(x=block, y=mean_accuracy, data=ms_block, color = condition,
+      geom=c("point", "line"), stat="identity") + 
+    geom_linerange(aes(ymin=mean_accuracy - ci_low, 
+        ymax=mean_accuracy + ci_high), 
+        width = .05, size=0.6) + 
+    scale_colour_grey(start = 0, end = .5) +
+    scale_y_continuous(limits=c(0.5,1)) +
+    ylab("Mean Accuracy") +
+    xlab("Block") +
+    theme_classic() +
+    theme(text = element_text(size=16))
+```
+
+# Evidence selection analysis (active learning)
+
+Analyze the average distance of participants' samples from the optimal decision
+boundary.
+
+```{r sampling data, echo=F}
+df_sampling <- df %>%
+    filter(condition == "active", trial_type == "training")
+```
+
+Rotate, so orientation and radius are on the same dimension.
+
+```{r rotate samples, echo=F}
+# dim of interest = dimension with category boundary
+# other dim = dimesnion that does not contain the category boundary 
+df_sampling <- df_sampling %>%
+    mutate(dim_of_interest = ifelse(odb_scale == "orientation_scale",
+                                    orientation_response_param,
+                                    radius_response_param),
+           other_dim = ifelse(odb_scale == "orientation_scale",
+                              radius_response_param,
+                              orientation_response_param)
+           )
+```
+
+Plot group level sampling behavior.
+
+```{r sampling plot, fig.width=8}
+qplot(x=dim_of_interest, y=other_dim, data=df_sampling,
+      facets=.~block) +
+    geom_vline(aes(xintercept=300)) 
+```
+
+Plot individual participant sampling behavior
+
+```{r sampling subs, echo=F, fig.width=10}
+qplot(x=dim_of_interest, y=other_dim, data=df_sampling,
+      color = odb_scale) +
+    facet_wrap(odb_scale~subids, nrow=4) +
+    geom_vline(aes(xintercept=300)) +
+    scale_color_grey(start=0, end=0.6)
+```
+
+Get distance from optimal decision boundary for each sample.
+
+```{r}
+df_sampling <- mutate(df_sampling, 
+                      samp_dist_odb = ifelse(odb_scale == "orientation_scale",
+                                             abs(odb_param - orientation_response_param),
+                                             abs(odb_param - radius_response_param)))
+```
+
+Now get the average distance across subjects
+
+```{r}
+ms_sampling <- df_sampling %>%
+    group_by(block) %>%
+    summarize(mean_samp_dist = mean(samp_dist_odb),
+              ci_high = ci.high(samp_dist_odb),
+              ci_low = ci.low(samp_dist_odb))
+```
+
+Now plot.
+
+```{r}
+qplot(x=block, y=mean_samp_dist, data=ms_sampling, 
+      geom="line", ylim=c(75,225)) +
+    geom_pointrange(aes(ymin=mean_samp_dist - ci_low, 
+        ymax=mean_samp_dist + ci_high), 
+        width = .05, size=0.6) +
+    scale_color_grey()
+```
+
+Compute average response times across blocks 
+for the two different dimensions.  
+
+```{r rt over blocks}
+ms_rt <- df_sampling %>%
+    group_by(block) %>%
+    summarise(mean_rt = mean(rt),
+              ci_high = ci.high(rt),
+              ci_low = ci.low(rt))
+```
+
+Now plot.
+
+```{r}
+qplot(x=block, y=mean_rt, data=ms_rt, 
+      geom="line") +
+    geom_pointrange(aes(ymin=mean_rt - ci_low, 
+        ymax=mean_rt + ci_high), 
+        width = .05, size=0.6) +
+    scale_color_grey()
+```
+
+# Relationship between sampling and test
+
+Sample distance and accuracy
+
+```{r}
+ss_samp_dist <- df_sampling %>%
+    filter(condition == "active") %>%
+    group_by(subids) %>%
+    summarise(mean_samp_dist = mean(samp_dist_odb),
+              ci_high_msd = ci.high(samp_dist_odb),
+              ci_low_msd = ci.low(samp_dist_odb))
+
+ss_mean_acc <- df %>%
+    filter(condition == "active") %>%
+    filter(trial_type == "test") %>%
+    group_by(subids) %>%
+    summarise(mean_accuracy = mean(correct),
+              ci_high_acc = ci.high(correct),
+              ci_low_acc = ci.low(correct))
+
+# join sampling and test acc together
+ss_all <- inner_join(ss_samp_dist, ss_mean_acc, by="subids")
+```
+
+Plot
+
+```{r}
+qplot(x=mean_samp_dist, y=mean_accuracy, data=ss_all) +
+    geom_smooth(method="lm")
+```
+
+
+# Relatiship between Confidence and Accuracy
+
+```{r}
+
+```
+
+# Statistics 
+
+t.test testing difference in accuracy on test trials between active and receptive learning conditions.
+
+```{r}
+df_test <- filter(df, trial_type == "test")
+t.test(correct ~ condition, data=df_test)
+```
+
+Replicated the slight boost to accuracy in the active learning condition. 
+
+# Models
+
+Model the relationship between mean sampling distance on training trials and mean accuracy
+on test trials.
+
+```{r}
+m1 <- lm(mean_accuracy ~ mean_samp_dist, data=ss_all)
+summary(m1)
+```
+
+Negative relationship such that those subjects who sampled farther away from the boundary
+were less accurate on test.
+
+Next, we try to predict correct based on condition.
+
+```{r}
+m2 <- glmer(correct ~ condition + (1|subids), 
+            data=filter(df,trial_type=="test"), family=binomial) 
+summary(m2)
+
+# add rt on test trials to the model
+m3 <- glmer(correct ~ condition + rt + (1|subids), 
+            data=filter(df,trial_type=="test"), family=binomial) 
+summary(m3)
+
+# add block
+m4 <- glmer(correct ~ condition + rt + block + (1|subids), 
+            data=filter(df,trial_type=="test"), family=binomial) 
+summary(m4)
+```
