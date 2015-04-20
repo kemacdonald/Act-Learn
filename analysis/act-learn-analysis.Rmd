@@ -58,9 +58,41 @@ ss_include %>%
 
 # merge with full data frame
 df <- inner_join(df, select(ss_include, subids, include), by = "subids")
+ss <- inner_join(ss, select(ss_include, subids, include), by = "subids")
 
 # filter out subjects that are +/- 3sd
 df <- df %>% filter(include == 1)
+ss <- ss %>% filter(include == 1)
+```
+
+# Demographics
+
+```{r demographics, echo=FALSE}
+# gender
+df %>%
+    group_by(gender) %>%
+    summarise(n_distinct(subids))
+
+# age
+df %>% summarise(floor(median(age)))
+df %>% summarise(min(age), max(age))
+
+# language
+df %>%
+    group_by(language) %>%
+    summarise(n_distinct(subids))
+
+# education
+df %>%
+    group_by(education) %>%
+    summarise(n_distinct(subids))
+
+# length of experiment
+df %>%
+    group_by(subids, condition) %>%
+    summarise(exp_length_min = sum(rt) / 60000) %>%
+    ungroup() %>%
+    summarise(mean(exp_length_min))
 ```
 
 # Descriptives
@@ -80,7 +112,7 @@ on test trials.
 qplot(correct, data=filter(df, trial_type=="test"), facets = condition~block)
 ```
 
-Historgram of length of experiment split by condition 
+Histogram of length of experiment split by condition 
 
 ```{r, echo=F}
 ss_rt <- df %>%
@@ -177,6 +209,34 @@ qplot(x=block, y=mean_accuracy, data=ms_block, color = condition,
     theme_classic() +
     theme(text = element_text(size=16))
 ```
+
+Accuracy by block and dimension.
+
+```{r acc by block and dimension, echo=F}
+ms_block <- df %>%
+    filter(trial_type == "test") %>%
+    group_by(condition, block, odb_scale) %>%
+    summarise(mean_accuracy = mean(correct),
+              ci_high = ci.high(correct),
+              ci_low = ci.low(correct))
+```
+
+Plot accuracy over blocks
+
+```{r acc by block and dim plot, echo=F}
+qplot(x=block, y=mean_accuracy, data=ms_block, color = condition,
+      geom=c("point", "line"), stat="identity", facets=.~odb_scale) + 
+    geom_linerange(aes(ymin=mean_accuracy - ci_low, 
+        ymax=mean_accuracy + ci_high), 
+        width = .05, size=0.6) + 
+    scale_colour_grey(start = 0, end = .5) +
+    scale_y_continuous(limits=c(0.5,1)) +
+    ylab("Mean Accuracy") +
+    xlab("Block") +
+    theme_classic() +
+    theme(text = element_text(size=16))
+```
+
 
 # Evidence selection analysis (active learning)
 
@@ -316,8 +376,7 @@ qplot(x=mean_samp_dist, y=mean_accuracy, data=ss_all) +
 t.test testing difference in accuracy on test trials between active and receptive learning conditions.
 
 ```{r}
-df_test <- filter(df, trial_type == "test")
-t.test(correct ~ condition, data=df_test)
+t.test(mean_accuracy ~ condition, var.equal=TRUE, data=ss)
 ```
 
 Replicated the slight boost to accuracy in the active learning condition. 
@@ -351,4 +410,8 @@ summary(m3)
 m4 <- glmer(correct ~ condition + rt + block + (1|subids), 
             data=filter(df,trial_type=="test"), family=binomial) 
 summary(m4)
+
+m5 <- glmer(correct ~ condition * odb_scale + (1|subids), 
+            data=filter(df,trial_type=="test"), family=binomial)
+summary(m5)
 ```
