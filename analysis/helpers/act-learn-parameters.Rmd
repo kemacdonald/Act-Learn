@@ -1,0 +1,313 @@
+---
+title: "Active Learning Parameter Values"
+author: "Kyle MacDonald"
+date: "July 21, 2015"
+output: html_document
+---
+
+This script generates parameter values for active category learning experiment.
+
+Set seed so we can regenerate our sampling procedures.
+
+```{r}
+set.seed(seed = 43)
+```
+
+Load packages
+
+```{r}
+library(rjson)
+library(gridExtra)
+library(ggplot2)
+library(MASS)
+library(dplyr)
+theme_set(theme_bw())
+```
+
+## Experiment information 
+
+```{r}
+n_blocks <- 2
+n_trials_in_block <- 16
+n_trials <- n_blocks * n_trials_in_block
+n_trials_cat <- n_trials / 2
+test_trials_block <- 32
+n_test_trials <- n_blocks * test_trials_block
+n_trials_quadrant <- test_trials_block / 4
+```
+
+## Rule-Based Condition 
+
+### Training Trials
+
+Category A1
+
+```{r}
+a1.rad.mean <- 220
+a1.rad.sd <- sqrt(2000)
+a1.orientation.mean <- 300
+a1.orientation.sd <- sqrt(9000)
+a1_radii <- floor(rnorm(n_trials_cat, mean = a1.rad.mean, sd = a1.rad.sd))
+a1_orientations <- floor(rnorm(n_trials_cat, mean = a1.orientation.mean, sd = a1.orientation.sd))
+```
+
+Category B1
+
+```{r}
+b1.rad.mean <- 380
+b1.rad.sd <- sqrt(2000)
+b1.orientation.mean <- 300
+b1.orientation.sd <- sqrt(9000)
+b1_radii <- floor(rnorm(n_trials_cat, mean = b1.rad.mean, sd = b1.rad.sd))
+b1_orientations <- floor(rnorm(n_trials_cat, mean = b1.orientation.mean, sd = b1.orientation.sd))
+```
+
+Convert to json 
+
+```{r, eval=FALSE}
+toJSON(a1_radii)
+toJSON(a1_orientations)
+toJSON(b1_radii)
+toJSON(b1_orientations)
+```
+
+Create data frame
+
+```{r}
+df <- data.frame(orientation = a1_orientations, radii = a1_radii, category = "a", 
+                 condition = "1") %>% 
+    bind_rows(data.frame(orientation = b1_orientations, radii = b1_radii, category = "b",
+                         condition = "1"))
+```
+
+### Category A2
+
+```{r}
+a2.rad.mean <- 300
+a2.rad.sd <- sqrt(9000)
+a2.orientation.mean <- 220
+a2.orientation.sd <- sqrt(2000)
+a2_radii <- floor(rnorm(n_trials_cat, mean = a2.rad.mean, sd = a2.rad.sd))
+a2_orientations <- floor(rnorm(n_trials_cat, mean = a2.orientation.mean, sd = a2.orientation.sd))
+```
+
+### Category B2
+
+```{r}
+b2.rad.mean <- 300
+b2.rad.sd <- sqrt(9000)
+b2.orientation.mean <- 380
+b2.orientation.sd <- sqrt(2000)
+b2_radii <- floor(rnorm(n_trials_cat, mean = b2.rad.mean, sd = b2.rad.sd))
+b2_orientations <- floor(rnorm(n_trials_cat, mean = b2.orientation.mean, sd = b2.orientation.sd))
+```
+
+### Convert to json 
+
+```{r, eval=FALSE}
+toJSON(a2_radii)
+toJSON(a2_orientations)
+toJSON(b2_radii)
+toJSON(b2_orientations)
+```
+
+### Plot 
+
+```{r, fig.width=8, fig.height=4}
+df_2 <- data.frame(orientation = a2_orientations, radii = a2_radii, category = "a",
+                   condition = "2") %>% 
+    bind_rows(data.frame(orientation = b2_orientations, radii = b2_radii, category = "b", 
+                         condition = "2"))
+
+df_final <- bind_rows(df, df_2)
+```
+
+```{r}
+df_abline1 <- data.frame(condition = c("1", "2"), y_intercept = c(-10, 300), x_intercept = c(300, -10))
+
+plot1 <- qplot(radii, orientation, color = category, data=df_final, size = 1,
+               facets = condition ~ ., xlim=c(0,600), ylim=c(0,600)) + 
+    geom_hline(data=df_abline1, aes(yintercept = y_intercept), color = "blue", size = 1) +
+    geom_vline(data=df_abline1, aes(xintercept = x_intercept), color = "blue", size = 1) +
+    guides(size = F, color = F)
+
+plot1
+```
+
+## Information Integration Condition 
+
+Next we generate values for the information integration condition. This is
+very similar to the Rule-based categories, with the main difference being
+that there is covariance between the angle and radius values. In this condition, 
+the optimal classification rule is a linear combination of the values along two dimensions.
+
+### Category A1
+
+```{r}
+var_radii <- 4538
+var_orientations <- 4538
+cov_ro <- 4463
+Sigma <- matrix(c(var_radii, cov_ro, cov_ro, var_orientations),2,2)
+df <- data.frame(floor(mvrnorm(n = n_trials_cat, mu = c(250, 350), Sigma, empirical = T)))
+df$category <- "a"
+df$condition <- "1"
+```
+
+### Category B1
+
+```{r}
+var_radii <- 4538
+var_orientations <- 4538
+cov <- 4463
+Sigma <- matrix(c(var_radii, cov_ro, cov_ro, var_orientations),2,2)
+df_2 <- data.frame(floor(mvrnorm(n = n_trials_cat, mu = c(350, 250), Sigma, empirical = T)))
+df_2$category <- "b"
+df_2$condition <- "1"
+```
+
+### Category A2
+
+```{r}
+var_radii <- 4538
+var_orientations <- 4538
+cov_ro <- -4463
+Sigma <- matrix(c(var_radii, cov_ro, cov_ro, var_orientations),2,2)
+df_3 <- data.frame(floor(mvrnorm(n = n_trials_cat, mu = c(250, 250), Sigma, empirical = T)))
+df_3$category <- "a"
+df_3$condition <- "2"
+```
+
+### Category B2
+
+```{r}
+var_radii <- 4538
+var_orientations <- 4538
+cov_ro <- -4463
+Sigma <- matrix(c(var_radii, cov_ro, cov_ro, var_orientations),2,2)
+df_4 <- data.frame(floor(mvrnorm(n = n_trials_cat, mu = c(350, 350), Sigma, empirical = T)))
+df_4$category <- "b"
+df_4$condition <- "2"
+```
+
+### Plot
+
+```{r}
+# create data frame 
+df_final2 <- rbind(df, df_2, df_3, df_4)
+names(df_final2) <- c("radii", "orientation", "category", "condition")
+```
+
+```{r}
+df_abline <- data.frame(condition = c("1", "2"), intercept = c(0, 600), slope = c(1, -1))
+
+plot2 <- qplot(radii, orientation, data = df_final2, color = category, size = 1,
+               facets = condition ~ .) +
+    xlim(0, 600) +
+    ylim(0, 600) +
+    geom_abline(data = df_abline, aes(intercept=intercept, slope=slope), 
+                color = "blue", size = 1) +
+    guides(size = F)
+    
+plot2
+```
+
+Helper function to compute the perendicular distance from a point to a line
+
+```{r}
+perp_dist_function <- function(x, y, a, b, c) {
+    distance <- (a*x + b*y + c) / (sqrt(a^2 + b^2))
+    distance
+}
+perp_dist_function(x = 600, y = 300, a = -1, b = -1, c = 600)
+```
+Show parameter values for all conditions and categories.
+
+```{r, fig.height=6}
+grid.arrange(plot1, plot2, ncol = 2)
+```
+
+### Convert to JSON
+
+```{r}
+# Order 1
+toJSON(df$X1) # A1 radii
+toJSON(df$X2) # A1 angles
+toJSON(df_2$X1) # B1 radii
+toJSON(df_2$X2) # B1 angles
+
+# Order 2
+toJSON(df_3$X1) # A2 radii
+toJSON(df_3$X2) # A2 angles
+toJSON(df_4$X1) # B2 radii
+toJSON(df_4$X2) # B2 angles
+```
+
+
+## Test trials
+
+Algorithm for generating test trials:
+*uniform grid across parameter space
+*randomly sample from each quadrant such that
+*each block has 8 trials from each
+*then shuffle those blocks
+
+### Make quadrants in parameter space 
+
+```{r}
+quad1.x <- seq(1,300)
+quad1.y <- seq(301,600)
+quad2.x <- seq(301,600)
+quad2.y <- seq(301,600)
+quad3.x <- seq(1,300)
+quad3.y <- seq(1, 300)
+quad4.x <- seq(301,600)
+quad4.y <- seq(1,300)
+```
+
+Function that samples from each of these quadrants
+
+```{r}
+# no inputs
+# returns an array of radii and orientation values, 
+# 8 from each quadrant, in parameter space
+rand.quad <- function(n_blocks, n_trials_quadrant) {
+    radius.vals <- vector()
+    orientation.vals <- vector()
+    for (i in 1:n_blocks) {
+        for (j in 1:n_trials_quadrant) {
+            radius.vals <- c(radius.vals, sample(quad1.x, 1))
+            radius.vals <- c(radius.vals, sample(quad2.x, 1))
+            radius.vals <- c(radius.vals, sample(quad3.x, 1))
+            radius.vals <- c(radius.vals, sample(quad4.x, 1))
+            orientation.vals <- c(orientation.vals, sample(quad1.y, 1))
+            orientation.vals <- c(orientation.vals, sample(quad2.y, 1))
+            orientation.vals <- c(orientation.vals, sample(quad3.y, 1))
+            orientation.vals <- c(orientation.vals, sample(quad4.y, 1))
+        }
+    }
+    list.vals <- list("radii" = radius.vals, "angles" = orientation.vals)
+    
+    return(list.vals)
+}
+```
+
+Get values for test trials using the new function.
+
+```{r}
+test.trials.vals <- rand.quad(n_blocks, n_trials_quadrant) 
+```
+
+Plot test trial values to make sure we have a relatively uniform 
+distribution across potential parameter values.
+
+```{r}
+qplot(test.trials.vals$radii, test.trials.vals$angles) +
+    geom_hline(y = 300, color = "blue") +
+    geom_line(x = 300, color = "blue")
+```
+
+### Convert to JSON
+
+```{r, eval=FALSE}
+toJSON(test.trials.vals)
+```

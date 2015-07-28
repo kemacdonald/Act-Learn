@@ -11,7 +11,7 @@ vs. passive training in a category learning task.
 
 ```{r libraries, warning=F, message=F, comment=F}
 rm(list=ls())
-source("useful.R")
+source("helpers/useful.R")
 ```
 
 # Load data
@@ -49,7 +49,7 @@ ss_include <- ss %>%
                             ifelse(mean_accuracy > m_act + 3*sd_act | 
                                        mean_accuracy < m_act - 3*sd_act, 0, 1),
                             ifelse(mean_accuracy > m_rec + 3*sd_rec |
-                                mean_accuracy < m_rec - 3*sd_rec, 0, 1))) %>%
+                                       mean_accuracy < m_rec - 3*sd_rec, 0, 1))) %>%
     select(subids, include, condition) 
 
 ss_include %>%
@@ -172,8 +172,8 @@ qplot(x=condition, y=mean_accuracy, data=ms_order,
       geom="bar", stat="identity", fill = condition,
       facets=.~odb_scale) + 
     geom_linerange(aes(ymin=mean_accuracy - ci_low, 
-        ymax=mean_accuracy + ci_high), 
-        width = .05, size=0.6) + 
+                       ymax=mean_accuracy + ci_high), 
+                   width = .05, size=0.6) + 
     scale_fill_grey(start=0.3, end=0.6) +
     coord_cartesian(ylim=c(0.5,1)) +
     theme_classic() +
@@ -200,8 +200,8 @@ Plot accuracy over blocks
 qplot(x=block, y=mean_accuracy, data=ms_block, color = condition,
       geom=c("point", "line"), stat="identity") + 
     geom_linerange(aes(ymin=mean_accuracy - ci_low, 
-        ymax=mean_accuracy + ci_high), 
-        width = .05, size=0.6) + 
+                       ymax=mean_accuracy + ci_high), 
+                   width = .05, size=0.6) + 
     scale_colour_grey(start = 0, end = .5) +
     scale_y_continuous(limits=c(0.5,1)) +
     ylab("Mean Accuracy") +
@@ -227,8 +227,8 @@ Plot accuracy over blocks
 qplot(x=block, y=mean_accuracy, data=ms_block, color = condition,
       geom=c("point", "line"), stat="identity", facets=.~odb_scale) + 
     geom_linerange(aes(ymin=mean_accuracy - ci_low, 
-        ymax=mean_accuracy + ci_high), 
-        width = .05, size=0.6) + 
+                       ymax=mean_accuracy + ci_high), 
+                   width = .05, size=0.6) + 
     scale_colour_grey(start = 0, end = .5) +
     scale_y_continuous(limits=c(0.5,1)) +
     ylab("Mean Accuracy") +
@@ -260,7 +260,7 @@ df_sampling <- df_sampling %>%
            other_dim = ifelse(odb_scale == "orientation_scale",
                               radius_response_param,
                               orientation_response_param)
-           )
+    )
 ```
 
 Plot group level sampling behavior.
@@ -275,10 +275,9 @@ Plot individual participant sampling behavior
 
 ```{r sampling subs, echo=F, fig.width=10}
 qplot(x=dim_of_interest, y=other_dim, data=df_sampling,
-      color = odb_scale) +
+      color = block) +
     facet_wrap(odb_scale~subids, nrow=4) +
-    geom_vline(aes(xintercept=300)) +
-    scale_color_grey(start=0, end=0.6)
+    geom_vline(aes(xintercept=300)) 
 ```
 
 Get distance from optimal decision boundary for each sample.
@@ -306,8 +305,8 @@ Now plot.
 qplot(x=block, y=mean_samp_dist, data=ms_sampling, 
       geom="line", ylim=c(75,225)) +
     geom_pointrange(aes(ymin=mean_samp_dist - ci_low, 
-        ymax=mean_samp_dist + ci_high), 
-        width = .05, size=0.6) +
+                        ymax=mean_samp_dist + ci_high), 
+                    width = .05, size=0.6) +
     scale_color_grey()
 ```
 
@@ -328,8 +327,8 @@ Now plot.
 qplot(x=block, y=mean_rt, data=ms_rt, 
       geom="line") +
     geom_pointrange(aes(ymin=mean_rt - ci_low, 
-        ymax=mean_rt + ci_high), 
-        width = .05, size=0.6) +
+                        ymax=mean_rt + ci_high), 
+                    width = .05, size=0.6) +
     scale_color_grey()
 ```
 
