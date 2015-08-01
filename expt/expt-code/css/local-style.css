@@ -11,12 +11,17 @@
   width: 150;
   margin: auto;
   margin-bottom: 10px;
+  font-size: 20px;
+}
+
+p {
+  font-size: 18px;
 }
 
 #antenna {
 	position: relative;
 	width: 800px;
-  height: 600px;
+  height: 500px;
 }
 
 #task_instructions {

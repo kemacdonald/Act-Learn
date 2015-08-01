@@ -1,0 +1,43 @@
+---
+title: "act-learn-power"
+author: "Kyle MacDonald"
+date: "July 28, 2015"
+output: html_document
+---
+
+# Calculate effect size 
+
+For Markant and Gureckis, 2014 active learning vs. passive learning t.test.
+
+
+```{r}
+rm(list=ls())
+library(compute.es)
+library(pwr)
+```
+
+Relevant values from independent samples t.test.
+
+```{r}
+t.val <- 1.82
+n.1 <- 30
+n.2 <- 30
+es <- tes(t.val, n.1, n.2)
+cohens.d <- es$d
+```
+
+Effect size from MacDonald, 2015 replication 
+
+```{r}
+t.val.km <- 2.3683
+n.1.km <- 24
+n.2.km <- 23
+es.km <- tes(t.val.km, n.1.km, n.2.km)
+cohens.d.km <- es.km$d
+```
+
+A priori power analysis for full replication experiment
+
+```{r}
+pwr.t.test(d=cohens.d.km,power=0.8,sig.level=0.05,type="two.sample",alternative="greater")
+```

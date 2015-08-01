@@ -6,7 +6,7 @@
 
 try { 
     var filename = "KM_act_learn";
-    var condCounts = "1,10;2,10;3,10,4,10;5,10;6,10;7,10;8,10";
+    var condCounts = "1,15;2,15;3,15,4,15;5,15;6,15;7,15;8,15";
     var xmlHttp = null;
     xmlHttp = new XMLHttpRequest();
     xmlHttp.open( "GET", "https://langcog.stanford.edu/cgi-bin/subject_equalizer/maker_getter.php?conds=" + condCounts + "&filename=" + filename, false );
@@ -16,11 +16,9 @@ try {
     var cond = 1;
 }
 
-var order, training_condition;
+var order, training_condition, flag = "true";
 
-var cond = "5";
-
-console
+var cond = "2";
 
 /* Set up experiment based on condition */
 
@@ -66,8 +64,6 @@ switch (cond) {
         category_type = "information-integration"
         break;
 }
-
-console.log(training_condition);
 
 
 /*Shows slides. We're using jQuery here the $ is the jQuery selector function, 
@@ -210,11 +206,15 @@ var third_orientation_scale = orientation_range / 3;
 /* Experiment logic */
 var num_correct_in_block = 0;
 var num_blocks = 2;
+var num_trials_block = 48;
 var num_trials = num_trials_block * num_blocks;
 var num_training_trials_block = 16;
 var num_training_trials_experiment = num_training_trials_block * num_blocks
 var num_test_trials_block = 32;
 var num_trials_block = num_training_trials_block + num_test_trials_block;
+var flag = "true";
+
+console.log(num_trials);
 
 /* parameter values for training trials: 
 * generated from gaussians (done in R) 
@@ -294,9 +294,6 @@ var test_orientations_stim = convertParamStim(test_orientations_param, scale_fac
 
 // wrap in array of json objects for each antenna
 var order1_antennas = [], order2_antennas = [], test_antennas = [], antenna_a, antenna_b;
-
-console.log(training_condition)
-console.log(category_type)
 
 // create array of training stimuli for Order 1 
 // if in the active training, then randomly generate starting radius/orientation values
@@ -555,10 +552,6 @@ if(category_type == "rule-based") {
     }
 }
 
-
-console.log("optimal decision boundary stim is: " + optimal_decision_boundary_stim);
-console.log("optimal decision boundary stim is: " + optimal_decision_boundary_param);
-
 /* build trials array */
 var trials = [], trial_radius, trial_angle, 
 trial_info, trial_type, trial_number = 0, 
@@ -637,7 +630,6 @@ for(i = 0; i < num_blocks; i++) {
 
 }
 
-console.log(trials);
 
 //initialize progress bar 
 $(".progress").progressbar();
@@ -733,8 +725,8 @@ var experiment = {
     // clear borders
     $("#channel_1").css("border", "3px solid white")
     $("#channel_2").css("border", "3px solid white")
-    // reset slider
-    $( "#single_slider" ).slider({
+    
+    /*$( "#single_slider" ).slider({ // reset slider
         range : "min",
         min : 0,
         max : 1,
@@ -742,7 +734,7 @@ var experiment = {
         value : 0.5,
         change: function( event, ui ) {}
     });
-    var slider_check = false;
+    var slider_check = false;*/
 
     //show blank slide
     showSlide("blankSlide");
@@ -760,13 +752,13 @@ var experiment = {
 /*The work horse of the sequence: what to do on every trial.*/
   next: function() {
         //disable default spacebar functionality 
-        $(document).keydown(function(event) {
+        $(document).keyup(function(event) {
             if(event.which == 32){
                 return false;
             }
         });
         /*some slider functionality stuff*/
-        $(function() {
+        /*$(function() {
             $( "#single_slider" ).slider({
               range : "min",
               min : 0,
@@ -781,7 +773,7 @@ var experiment = {
 
         $( "#single_slider" ).on( "slidechange", function( event, ui ) {
           slider_check = true;
-        });
+        });*/
 
         // put blue box around svg element
         var rect = paper.rect(0,0,paper_width, paper_height);
@@ -803,7 +795,7 @@ var experiment = {
         if (typeof trial == "undefined") {
             $(".progress").attr("style", "visibility: hidden")
             // unbind keyboard event
-            $(document).unbind("keydown")
+            $(document).unbind("keyup")
             return showSlide("qanda");
         }
         //console.log("Trial info is: ")
@@ -821,10 +813,10 @@ var experiment = {
                 $("#channel_label").css("border", "3px solid white")
                 $("#receptive_instructions").attr("style", "display: none");
                 $("#category_table").attr("style", "display: none");
-                $("#slider_table").attr("style", "display: none");
+               // $("#slider_table").attr("style", "display: none");
                 $("#test_instructions").attr("style", "display: none");
-                $("#slider_instructions").attr("style", "display: none");
-                $("#slider_instructions2").attr("style", "display: none");
+               // $("#slider_instructions").attr("style", "display: none");
+               // $("#slider_instructions2").attr("style", "display: none");
         } else if (trial.trial_type == "training" & // this should be "training"
           training_condition == "receptive") {
                 $("#task_instructions").attr("style", "display: none");
@@ -832,18 +824,18 @@ var experiment = {
                 $("#channel_label").css("border", "3px solid white")
                 $("#receptive_instructions").attr("style", "display: block");
                 $("#category_table").attr("style", "display: none");
-                $("#slider_table").attr("style", "display: none");
+               // $("#slider_table").attr("style", "display: none");
                 $("#test_instructions").attr("style", "display: none");
-                $("#slider_instructions").attr("style", "display: none");
-                $("#slider_instructions2").attr("style", "display: none");
+               // $("#slider_instructions").attr("style", "display: none");
+               // $("#slider_instructions2").attr("style", "display: none");
         } else {
                 $("#task_instructions").attr("style", "display: none");
                 $("#channel_label").attr("style", "display: none");
                 $("#channel_label").css("border", "3px solid white")
                 $("#receptive_instructions").attr("style", "display: none");
-                $("#slider_table").attr("style", "display: none");
-                $("#slider_instructions").attr("style", "display: none");
-                $("#slider_instructions2").attr("style", "display: none");
+               // $("#slider_table").attr("style", "display: none");
+               // $("#slider_instructions").attr("style", "display: none");
+               // $("#slider_instructions2").attr("style", "display: none");
                 $("#test_instructions").attr("style", "display: block");
                 $("#category_table").attr("style", "display: block");
         };
@@ -895,11 +887,13 @@ var experiment = {
 
         // make drag functions so antenna is interactive
         var start = function (x, y) {
+          flag = "false";
           this.r = this.attr("r");
           this.cx = this.attr("cx");
           },
 
-        scaleAntenna = function(dx, dy) {
+        scaleAntenna = function(dx) {
+                console.log(dx)
                 var R = this.r + dx;
                 // constrain scaling to the canvas
                 if (R <= radius_lower_limit) {
@@ -932,26 +926,23 @@ var experiment = {
               rot_angle = rot_angle + 360;
             }
 
-
-
             // Constrain rotation based on rotation scale for that subject
               if(angleDiff + rot_angle > rotation_upper_limit || angleDiff + rot_angle < rotation_lower_limit) {
                       angleDiff = 0;
               }
-
-              console.log(rot_angle);
 
             line.animate({transform: line.attr("transform") + "R" + angleDiff})
             prevDx = dx;
         },
 
         up = function () {
+             flag = "true";
              this.dx = this.dy = 0;
              prevDx = null;
         },
 
         logDataTraining = function(category_response, radius_response, orientation_response, radius_param, orientation_param) {
-              $(document).unbind("keydown")
+              $(document).unbind("keyup")
 
                   // store information from the trial
                   var endTime = (new Date()).getTime();
@@ -1029,10 +1020,10 @@ var experiment = {
                   //unbind event handlers
                   $("#channel_1").unbind();
                   $("#channel_2").unbind();
-                  $(document).unbind("keydown")
+                  $(document).unbind("keyup")
 
                   // store information from the trial
-                  var confidence = $('#single_slider').slider("option", "value");
+                //  var confidence = $('#single_slider').slider("option", "value");
                   var endTime = (new Date()).getTime();
 
                   data = {
@@ -1050,7 +1041,7 @@ var experiment = {
                     trial_category: trial.antenna_category,
                     test_response: test_response,
                     correct: test_response == trial.antenna_category,
-                    confidence: confidence,
+                   // confidence: confidence,
                     quadrant: trial.quadrant
                   };
 
@@ -1098,18 +1089,22 @@ var experiment = {
        /* Set up keypress event
         * While the z key is pressed user can scale antenna
         * After the x key is pressed user can rotate antenna 
-        */
-        $(document).keydown(function(event){
-              //event.preventDefault();
+        */  
+
+        $(document).keyup(function(event){
               var keys = {"z": 90, "x": 88, "space_bar": 32};
               switch(event.which) {
                 case keys["z"]:
-                    circle.undrag(); // unbinds any prior event listener 
-                    circle.drag(scaleAntenna, start, up);
+                    if(flag == "true") {
+                      circle.undrag(); // unbinds any prior event listener 
+                      circle.drag(scaleAntenna, start, up);
+                    }
                     break;
                 case keys["x"]:
-                    circle.undrag(); // unbinds any prior event listener 
-                    circle.drag(rotateAntenna, start, up);
+                    if (flag == "true") {
+                      circle.undrag(); // unbinds any prior event listener 
+                      circle.drag(rotateAntenna, start, up);
+                    }
                     break;
                 case keys["space_bar"]:
                     //add check to make sure user has interacted with antenna
@@ -1117,13 +1112,13 @@ var experiment = {
                        trial.angle == Math.round(line.matrix.split().rotate)) {
                         alert("Please adjust the antenna to learn the station")
                     } else {
-                      $(document).unbind("keydown")
+                      $(document).unbind("keyup")
                       var radius_response = Math.round(circle.attr("r"));
                       var radius_param = convertStimParam(radius_response, scale_factor_radius, radius_lower_limit, min_param_scale);
                       var orientation_response = Math.round(line.matrix.split().rotate);
                       var orientation_param = convertStimParam(orientation_response, scale_factor_orientation, rotation_lower_limit, min_param_scale);
-
                       var category_response;
+                      // check if we are in the rule-based condition
                       if(category_type == "rule-based") {
                         // if order1 then check antenna radius, else check orientation
                         if(order == "order1") {
@@ -1136,7 +1131,7 @@ var experiment = {
                                 $(".category_label").attr("style", "visibility: visible"); 
                                 category_response = "B";
                             }
-                        } else {
+                        } else { // otherwise we are in the radius order
                             if (orientation_param < optimal_decision_boundary_param) {
                             $("#category").text("1");
                             $(".category_label").attr("style", "visibility: visible"); 
@@ -1170,10 +1165,6 @@ var experiment = {
                         }
                       }
                     }
-
-                    console.log("radius param: " + radius_param)
-                    console.log("orientation param: " + orientation_param)
-                    console.log(category_response);
                         
                       setTimeout(function(){
                         logDataTraining(category_response, radius_response, orientation_response, radius_param, orientation_param);
@@ -1188,7 +1179,7 @@ var experiment = {
             // delay the timing of event handler so user can't respond before seeing the channel label
             setTimeout(function(){
               // user must press Z for channel 1 and X for channel 2
-            $(document).keydown(function(event){
+            $(document).keyup(function(event){
                   var keys = {"z": 90, "x": 88, "space_bar": 32};
                    switch(event.which) {
                     case keys["z"]:
@@ -1217,39 +1208,41 @@ var experiment = {
         //add event listeners to table so user can select a channel
         $("#channel_1").click(function() {
           var test_response = "A"; // store response
-          // hide channel table and show slider bar
+          logDataTest(test_response); // submit response to logDataTest function
+          /*// hide channel table and show slider bar
             setTimeout(function() {
               $("#test_instructions").attr("style", "display: none");
               $("#category_table").attr("style", "display: none");
-              $("#slider_instructions").attr("style", "display: block");
-              $("#slider_instructions2").attr("style", "display: block");
-              $("#slider_table").attr("style", "display: block");
+             // $("#slider_instructions").attr("style", "display: block");
+             // $("#slider_instructions2").attr("style", "display: block");
+             // $("#slider_table").attr("style", "display: block");
             }, 250);
           // add keypress event listener, so user can submit confidence response
-            $(document).keydown(function(event){
+            $(document).keyup(function(event){
                 var keys = {"space_bar": 32};
                 if(event.which == keys['space_bar']) {
-                    if(slider_check == true) {
+                        
+                   /* if(slider_check == true) {
                       logDataTest(test_response);
                      } else {
                       alert("Please adjust the slider to report your confidence")
                      }
                 }
-            });
+            });*/
 
         });
 
         //add event listeners to table so user can select a channel
         $("#channel_2").click(function() {
           var test_response = "B"; // store response
-
-          // hide channel table and show slider bar
+          logDataTest(test_response);
+          /*// hide channel table and show slider bar
             setTimeout(function() {
               $("#test_instructions").attr("style", "display: none");
               $("#category_table").attr("style", "display: none");
-              $("#slider_instructions").attr("style", "display: block");
-              $("#slider_instructions2").attr("style", "display: block");
-              $("#slider_table").attr("style", "display: block");
+             // $("#slider_instructions").attr("style", "display: block");
+             // $("#slider_instructions2").attr("style", "display: block");
+             // $("#slider_table").attr("style", "display: block");
             }, 250);
           // add keypress event listener, so user can submit confidence response
             $(document).keydown(function(event){
@@ -1262,7 +1255,7 @@ var experiment = {
                       alert("Please adjust the slider to report your confidence")
                      }
                 }
-            });
+            });*/
 
         });
     };

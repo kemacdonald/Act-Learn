@@ -43,7 +43,7 @@ table {
     text-align: center;
 
     border: 1px solid #04abe3;
-    width: 800px;
+    width: 850px;
     height: 665px;
 
     /*could explicitly set the following, but these are the defaults for me (chrome, linux)*/

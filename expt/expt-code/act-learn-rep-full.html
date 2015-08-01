@@ -23,17 +23,14 @@
     </head>
 
              
-    <body>
-      <!-- Progress Bar -->
-        <div class="progress"></div>
-
-        
+    <body>  
         <!--INSTRUCTIONS SLIDE-->
         <div class="slide" id="instructions">
+
             <img src="../_shared/images/stanford.png" alt="Stanford University">
                 <p id='logo-text'>Stanford Language and Cognition Lab</p>
-              <p>In this experiment, you will be learning how to categorize television antennas. <br>
-              The HIT should take ~15 minutes. <br>
+              <p>In this experiment, you will learn how to categorize television antennas. <br>
+              The HIT should take ~10 minutes. <br>
               Please pay attention, thanks! 
               </p>
     
@@ -75,7 +72,10 @@
                   </p>
 
                   <p id="instructions_text_receptive">
-                    To advance press the <b>Z key</b> if the antenna receives Channel 1. 
+                    To advance: 
+                    <br>
+                    Press the <b>Z key</b> if the antenna receives Channel 1. 
+                    <br>
                     Press the <b>X key</b> if the antenna receives Channel 2. 
                     <br><br>
                     Click the Continue button to begin.
@@ -84,9 +84,9 @@
                   <p id="instructions_text_active">
                     You will be able to design and test your own antennas. 
                     <br><br>
-                    *To adjust the size, press the <b>Z key ONCE</b>, 
+                    *To adjust the size, press and release the <b>Z key</b>, 
                     then click/drag the antenna <b>L/R</b>. <br> 
-                    *To adjust the angle, press the <b>X key ONCE</b>, 
+                    *To adjust the angle, press and release the <b>X key</b>, 
                     then click/drag the antenna <b>L/R</b>.
                     <br><br>
                     <b>NOTE</b> you will have to click within the antenna to adjust it. 
@@ -105,6 +105,9 @@
 
 <!--TEST SLIDE-->
       <div class="slide" id="stage">
+      		<!-- Progress Bar -->
+        	<div class="progress"></div>
+
             <p id="task_instructions">
               Press/release Z, then click/drag antenna L/R to adjust size. <br>
               Press/release X, then click/drag antenna L/R to adjust angle. <br>
@@ -128,11 +131,10 @@
               </tr>
             </table>
 
-            <p id="slider_instructions">
+<!--              <p id="slider_instructions">
               How confident are you in your response?
             </p>
 
-            <!-- slider -->
             <table id="slider_table" class="slider_table">
                     <tr><td class="left">not at all confident</td>
                       <td align-"center"><div id="single_slider" class="slider"></div></td>
@@ -142,8 +144,8 @@
 
             <p id="slider_instructions2">
               (Press the space bar to submit your confidence rating)
-            </p>
-
+            </p> 
+ -->
 
             <!-- category label -->
            <div class="category_label">
@@ -166,7 +168,7 @@
 <!--BLANK SLIDE -->    
       <div class="slide" id="blankSlide"> </div>
 
-<!--FINISHED SLIDE BAR-->        
+<!--FINISHED SLIDE -->        
       <div class="slide" id="finished">
           You're finished - thanks for participating! Submitting to 
           Mechanical Turk...
