@@ -5,8 +5,8 @@
 
 
 try { 
-    var filename = "KM_act_learn";
-    var condCounts = "1,15;2,15;3,15,4,15;5,15;6,15;7,15;8,15";
+    var filename = "KM_act_learn_ii_replication_finish_good";
+    var condCounts = "5,10;6,5;7,10;8,11";
     var xmlHttp = null;
     xmlHttp = new XMLHttpRequest();
     xmlHttp.open( "GET", "https://langcog.stanford.edu/cgi-bin/subject_equalizer/maker_getter.php?conds=" + condCounts + "&filename=" + filename, false );
@@ -178,7 +178,7 @@ convertStimParam = function(stim_value, scale_factor, min_stim_scale, min_param_
 /* compute the perendicular distance from a point to a line */
 
 perpDist = function(x_point, y_point, a_value, b_value, c_value) {
-    distance = (a_value * x_point + b_value * y_point) / (Math.sqrt(Math.pow(a_value, 2) + Math.pow(b_value, 2)))
+    distance = (a_value * x_point + b_value * y_point + c_value) / (Math.sqrt(Math.pow(a_value, 2) + Math.pow(b_value, 2)))
     return distance;
 };
 
@@ -214,8 +214,6 @@ var num_test_trials_block = 32;
 var num_trials_block = num_training_trials_block + num_test_trials_block;
 var flag = "true";
 
-console.log(num_trials);
-
 /* parameter values for training trials: 
 * generated from gaussians (done in R) 
 */
@@ -250,6 +248,7 @@ var ii_catB2orientations_param = [306,306,509,332,292,398,268,328,378,331,349,26
 * sampled 8 from each quadrant of parameter space
 * w/o replacement
 */
+
 var test_radii_param = [201,599,140,563,288,526,211,584,255,325,294,509,212,357,12,586,113,310,274,323,142,522,70,517,65,565,267,519,231,330,199,492,70,399,235,592,69,507,236,464,33,414,53,423,213,438,39,579,256,434,76,360,78,516,139,323,234,454,107,576,79,463,175,304];
 var test_orientations_param = [504,334,214,229,476,409,200,295,387,434,264,108,356,528,279,123,357,412,38,48,526,581,212,184,317,467,122,160,573,418,255,289,360,373,166,177,595,367,95,169,456,521,248,86,310,410,295,226,355,505,160,249,328,506,174,90,441,333,82,195,433,565,216,12];
 
@@ -260,7 +259,7 @@ var max_param_scale = 600;
 // set min and max for stimulus scales: radius and orientation
 var radius_lower_limit = random(min_radius,third_radius_scale);                // randomize minimum radius value
 var radius_upper_limit = max_radius;                                           // max radius is constrained by the bounding box
-var rotation_lower_limit = random(min_orientation, max_orientation);   // randomize min orientation value
+var rotation_lower_limit = random(min_orientation, max_orientation);   		   // randomize min orientation value
 var rotation_upper_limit = rotation_lower_limit + 150;                         // max orientation is min value + 150
 var rotation_midpoint = ((rotation_upper_limit - rotation_lower_limit) / 2) + rotation_lower_limit;
 
@@ -277,17 +276,18 @@ console.log("orientation scale factor is: " + scale_factor_orientation);*/
 
 // convert training trials parameter space values to stimulus space values 
 
-  var rb_catA1radii_stim = shuffle(convertParamStim(rb_catA1radii_param, scale_factor_radius, radius_lower_limit));
-  var rb_catA1orientations_stim = shuffle(convertParamStim(rb_catA1orientations_param, scale_factor_orientation, rotation_lower_limit));
-  var rb_catB1radii_stim = shuffle(convertParamStim(rb_catB1radii_param, scale_factor_radius, radius_lower_limit));
-  var rb_catB1orientations_stim = shuffle(convertParamStim(rb_catB1orientations_param, scale_factor_orientation, rotation_lower_limit));
+// rule-based order 1
+var rb_catA1radii_stim = shuffle(convertParamStim(rb_catA1radii_param, scale_factor_radius, radius_lower_limit));
+var rb_catA1orientations_stim = shuffle(convertParamStim(rb_catA1orientations_param, scale_factor_orientation, rotation_lower_limit));
+var rb_catB1radii_stim = shuffle(convertParamStim(rb_catB1radii_param, scale_factor_radius, radius_lower_limit));
+var rb_catB1orientations_stim = shuffle(convertParamStim(rb_catB1orientations_param, scale_factor_orientation, rotation_lower_limit));
 
-  // information integration order 1
-  var ii_catA1radii_stim = shuffle(convertParamStim(ii_catA1radii_param, scale_factor_radius, radius_lower_limit));
-  var ii_catA1orientations_stim = shuffle(convertParamStim(ii_catA1orientations_param, scale_factor_orientation, rotation_lower_limit));
-  var ii_catB1radii_stim = shuffle(convertParamStim(ii_catB1radii_param, scale_factor_radius, radius_lower_limit));
-  var ii_catB1orientations_stim = shuffle(convertParamStim(ii_catB1orientations_param, scale_factor_orientation, rotation_lower_limit));
- 
+// information integration order 1
+var ii_catA1radii_stim = shuffle(convertParamStim(ii_catA1radii_param, scale_factor_radius, radius_lower_limit));
+var ii_catA1orientations_stim = shuffle(convertParamStim(ii_catA1orientations_param, scale_factor_orientation, rotation_lower_limit));
+var ii_catB1radii_stim = shuffle(convertParamStim(ii_catB1radii_param, scale_factor_radius, radius_lower_limit));
+var ii_catB1orientations_stim = shuffle(convertParamStim(ii_catB1orientations_param, scale_factor_orientation, rotation_lower_limit));
+
 // convert test trials parameter space values to stimulus space values
 var test_radii_stim = convertParamStim(test_radii_param, scale_factor_radius, radius_lower_limit);
 var test_orientations_stim = convertParamStim(test_orientations_param, scale_factor_orientation, rotation_lower_limit);
@@ -325,8 +325,11 @@ for(i = 0; i < num_blocks; i++) {
               category: "NA",
               block: i + 1
           };
+
       } else {
+
         if(category_type == "rule-based") {
+
             antenna_a = {
                 radius: rb_catA1radii_stim.shift(),
                 angle: rb_catA1orientations_stim.shift(),
@@ -344,7 +347,8 @@ for(i = 0; i < num_blocks; i++) {
               category: "B",
               block: i + 1
             };
-        } else {
+
+        } else { // information integration condition
             antenna_a = {
                 radius: ii_catA1radii_stim.shift(),
                 angle: ii_catA1orientations_stim.shift(),
@@ -391,6 +395,7 @@ for(i = 0; i < num_blocks; i++) {
     var antennas_block = [];
     for(j = 0; j < num_training_trials_block / 2; j++) {
       if(training_condition == "active") {
+
         var radius_a = random(radius_lower_limit, radius_upper_limit);
         var angle_a = random(rotation_lower_limit, rotation_upper_limit);
 
@@ -414,7 +419,9 @@ for(i = 0; i < num_blocks; i++) {
               category: "NA",
               block: i + 1
           };
+
       } else {
+
         if(category_type == "rule-based") {
             antenna_a = {
                 radius: rb_catA2radii_stim.shift(),
@@ -466,7 +473,6 @@ order2_antennas = shuffle(order2_antennas);
 // create array of test antennas
 var num_test_trials = 32 * num_blocks, test_antenna_stim, test_antennas_stim = [];
 
-
 for(i = 0; i < num_blocks; i++) {
   var test_antennas_block = [];
   for(j = 0; j < num_test_trials_block; j++) {
@@ -503,7 +509,6 @@ for(i = 0; i < num_blocks; i++) {
 // randomize order of test blocks
 test_antennas_stim = shuffle(test_antennas_stim);
 
-
 //draw raphael canvas
 var paper = Raphael("antenna", paper_width, paper_height);
 
@@ -526,9 +531,9 @@ if(category_type == "rule-based") {
   var optimal_decision_boundary_param = [300];
 } else {
   if(order == "order1") {
-    var optimal_decision_boundary_param = "y=x"
+    var optimal_decision_boundary_param = "y>x"
   } else {
-    var optimal_decision_boundary_param = "y=-x"
+    var optimal_decision_boundary_param = "y<x"
   }
 }
 
@@ -536,18 +541,18 @@ if(category_type == "rule-based") {
 // and computes the optimal decision boundary on the stimulus scale
 if(category_type == "rule-based") {
     if(order == "order1") {
-      var optimal_decision_boundary_type = "radius_scale";
+      var optimal_decision_boundary_type = "radius";
       var optimal_decision_boundary_stim = convertParamStim(optimal_decision_boundary_param, scale_factor_radius, radius_lower_limit);
     } else {
-      var optimal_decision_boundary_type = "orientation_scale";
+      var optimal_decision_boundary_type = "orientation";
       var optimal_decision_boundary_stim = convertParamStim(optimal_decision_boundary_param, scale_factor_orientation, rotation_lower_limit);
     }
 } else {
     if(order == "order1") {
-      var optimal_decision_boundary_type = "radius_scale";
+      var optimal_decision_boundary_type = "y=x";
       var optimal_decision_boundary_stim = "y=x";
     } else {
-      var optimal_decision_boundary_type = "orientation_scale";
+      var optimal_decision_boundary_type = "y=-x";
       var optimal_decision_boundary_stim = "y=-x";
     }
 }
@@ -560,6 +565,7 @@ trial_category, test_trial, trial_quadrant;
 for(i = 0; i < num_blocks; i++) {
 
     for(j = 0; j < num_trials_block; j++) {
+
         // first check what kind of trial: training or test
         if(j < num_training_trials_block) {
           trial_type = "training";
@@ -569,7 +575,7 @@ for(i = 0; i < num_blocks; i++) {
 
         // if a training trial, grab radius and angle values from appropriate arrays
         if(trial_type == "training") {
-          // order determines whether category is defined by radius or orienatation
+          // order determines whether category is defined by radius or orientation
           if(order == "order1") {
             training_trial = order1_antennas[i].shift(); // using i to index into antennas array
             trial_radius = training_trial.radius;
@@ -593,21 +599,36 @@ for(i = 0; i < num_blocks; i++) {
             trial_radius_param = test_trial.radius_param;
             trial_angle_param = test_trial.angle_param;
             trial_quadrant = test_trial.quadrant;
-            // figure out which category test antenna is from 
-            // order 1 you check radius 
-            // order 2 you check orientation
-            if(order == "order1") {
-              if(trial_radius < optimal_decision_boundary_stim) {
-                trial_category = "A";
-              } else {
-                trial_category = "B";
-              }
-            } else {
-              if(trial_angle < optimal_decision_boundary_stim) {
-                trial_category = "A";
-              } else {
-                trial_category = "B";
-              }
+            // figure out which category type: rule-based vs. information integration
+            // then, figure out which category test antenna is from 
+            if (category_type == "rule-based") {
+                if(order == "order1") { // order 1 you check radius 
+                   if(trial_radius < optimal_decision_boundary_stim) {
+                      trial_category = "A";
+                    } else {
+                      trial_category = "B";
+                    }
+                 } else { // order 2 you check orientation
+                    if(trial_angle < optimal_decision_boundary_stim) {
+                      trial_category = "A";
+                    } else {
+                      trial_category = "B";
+                    }
+                }
+            } else { // otherwise you are in the information integration condition 
+                if (order == "order1") {
+                   if (trial_angle_param > trial_radius_param) { // y = x, if y value (radius) is bigger than x value then category A
+                      trial_category = "A";
+                    } else {
+                      trial_category = "B";
+                    }
+                } else {
+                    if (trial_angle_param < 600 - trial_radius_param) { // y = -x, if y value (radius) is smaller than x value then category A
+                      trial_category = "A";
+                    } else {
+                      trial_category = "B";
+                    }
+                }
             }
           trial_number++; 
         }
@@ -630,29 +651,31 @@ for(i = 0; i < num_blocks; i++) {
 
 }
 
+// console.log("order is: " + optimal_decision_boundary_stim);
+// console.log(trials);
+
 
 //initialize progress bar 
 $(".progress").progressbar();
 $(".progress").progressbar( "option", "max", num_trials);
 
 
-// restricts hits to chrome 
-if (BrowserDetect.browser != 'Chrome') {
-    $("#start_button").attr("disabled", "disabled");
-}
-
 //Show instruction slide
 showSlide("instructions"); 
 
 //disable accept button if in turk preview mode
 $("#start_button").click(function() {
-    if (BrowserDetect.browser != 'Chrome') {
-        alert ("Please switch to Google Chrome");
-    }
-    if (turk.previewMode) {
-      alert("Please accept HIT to view");
+    if (BrowserDetect.browser != 'Chrome' && turk.previewMode) {
+       showSlide("instructions");
+       alert("Warning this HIT will only work in Google Chrome. Please switch to if you would like to accept this HIT. Thanks!")
+    } else if (turk.previewMode) {
       showSlide("instructions");
+      alert("Please accept HIT to view");
+    } else if (BrowserDetect.browser != 'Chrome') {
+          showSlide("instructions");
+          alert("Warning this HIT will only work in Google Chrome. Please switch to if you would like to accept this HIT. Thanks!")
     } else {
+
       if(training_condition == "active") {
         $("#instructions_text_active").attr("style", "display: block");
         $("#instructions_text_receptive").attr("style", "display: none")
@@ -706,12 +729,6 @@ var experiment = {
     showSlide("finished"); 
     // Submit to turk
     setTimeout(function() {   
-      var xmlHttp = null;
-      xmlHttp = new XMLHttpRequest()
-      xmlHttp.open("GET", 
-        "https://langcog.stanford.edu/cgi-bin/subject_equalizer/decrementer.php?filename=" + filename + "&to_decrement=" + cond, 
-        false);
-      xmlHttp.send(null)
       turk.submit(experiment)
         }, 1500);
     },
@@ -751,6 +768,12 @@ var experiment = {
 
 /*The work horse of the sequence: what to do on every trial.*/
   next: function() {
+    // get trial information from trial array
+    trial = trials.shift();
+
+  		// remove category label text from previous trial
+  		$("#category").text("");
+
         //disable default spacebar functionality 
         $(document).keyup(function(event) {
             if(event.which == 32){
@@ -787,9 +810,6 @@ var experiment = {
         var prevDx = null;
         // show progress bar
         $(".progress").attr("style", "visibility: visible")
-
-        // get trial information from trial array
-        trial = trials.shift();
 
         // if trial is undefined, we are done - go to q and a slide
         if (typeof trial == "undefined") {
@@ -859,15 +879,15 @@ var experiment = {
             setTimeout(function() {
                 // check which category the antenna is in
                   if (trial.antenna_category == "A") {
-                      $("#category").text("1");
+                      $("#category").text("Channel 1");
                       $(".category_label").attr("style", "visibility: visible"); 
                       category_response = "1";
                   } else {
-                      $("#category").text("2");
+                      $("#category").text("Channel 2");
                       $(".category_label").attr("style", "visibility: visible"); 
                       category_response = "2";
                   } 
-            }, 750);
+            }, 1500);
 
         } else {
           var circle = paper.circle(centerX,centerY,trial.radius).attr({
@@ -893,7 +913,6 @@ var experiment = {
           },
 
         scaleAntenna = function(dx) {
-                console.log(dx)
                 var R = this.r + dx;
                 // constrain scaling to the canvas
                 if (R <= radius_lower_limit) {
@@ -921,10 +940,12 @@ var experiment = {
             rot_angle = Math.round(line.matrix.split().rotate)
 
 
-            // scale degree values between 0 and -90 degrees to make all angle values positive
+            // transfrom degree values between 0 and -90 degrees to make all angle values positive
             if(rot_angle < 0 & rot_angle >= -90) {
               rot_angle = rot_angle + 360;
             }
+
+            //console.log("transformed angle value is: " + rot_angle);
 
             // Constrain rotation based on rotation scale for that subject
               if(angleDiff + rot_angle > rotation_upper_limit || angleDiff + rot_angle < rotation_lower_limit) {
@@ -944,13 +965,23 @@ var experiment = {
         logDataTraining = function(category_response, radius_response, orientation_response, radius_param, orientation_param) {
               $(document).unbind("keyup")
 
+                             //console.log("radius value: " + trial.radius);
+                            // console.log("radius value is: " + radius_response)
+                             //console.log(radius_param);
+                             //console.log("----")
+                            // console.log(trial.angle);
+                             //console.log("angle value is: " + orientation_response);
+                             // console.log(orientation_param);
+
+                            // console.log("change is: " + Math.abs(trial.radius - radius_response));
+
                   // store information from the trial
                   var endTime = (new Date()).getTime();
 
                   // check which training condition, if in active log interaction data
                   if(training_condition == "active") {
-                    radius_param = convertStimParam(trial.radius, scale_factor_radius, radius_lower_limit, min_param_scale),
-                    orientation_param = convertStimParam(trial.angle, scale_factor_orientation, rotation_lower_limit, min_param_scale),
+                    radius_param = radius_param,
+                    orientation_param = orientation_param,
                     radius_response_stim = radius_response;
                     radius_response_param = radius_param,
                     radius_change_stim = Math.abs(trial.radius - radius_response);
@@ -999,7 +1030,7 @@ var experiment = {
                     trial_category: trial_category,
                     test_response: "NA",
                     correct: "NA",
-                    confidence: "NA"
+                   // confidence: "NA"
                   };
 
                   /*console.log("Data training is: ")
@@ -1031,11 +1062,13 @@ var experiment = {
                     trial_type: trial.trial_type,
                     block: trial.block,
                     within_block_trial_number: trial.trial_number_block,
-                    radius_trial: trial.radius,
+                    radius_trial_stim: trial.radius,
+                    radius_trial_param: trial.radius_param,
                     radius_response: "NA",
                     radius_change: "NA",
                     orientation_response: "NA",
                     orientation_trial: trial.angle,
+                    orientation_trial_param: trial.angle_param,
                     orientation_change: "NA",
                     rt: endTime - startTime,
                     trial_category: trial.antenna_category,
@@ -1045,9 +1078,9 @@ var experiment = {
                     quadrant: trial.quadrant
                   };
 
-                  /*console.log("Data test is: ")
-                  console.log(data);
-                  console.log("---------------------")*/
+                  //console.log("Data test is: ")
+                  //console.log(data);
+                  //console.log("---------------------")
 
                   //reset correct counter on the first trial of the test block
                   if(trial.trial_number_experiment == 65 || trial.trial_number_experiment == 113 ||
@@ -1092,30 +1125,42 @@ var experiment = {
         */  
 
         $(document).keyup(function(event){
-              var keys = {"z": 90, "x": 88, "space_bar": 32};
+              var keys = {"z": 90, "x": 88, "c": 67};
               switch(event.which) {
-                case keys["z"]:
+                case keys["z"]:        
                     if(flag == "true") {
+                      $("#adjust").text("Size Mode");
+                      $(".category_label").attr("style", "visibility: visible");
                       circle.undrag(); // unbinds any prior event listener 
                       circle.drag(scaleAntenna, start, up);
                     }
                     break;
                 case keys["x"]:
                     if (flag == "true") {
+                      $("#adjust").text("Angle Mode");
+                      $(".category_label").attr("style", "visibility: visible");
                       circle.undrag(); // unbinds any prior event listener 
                       circle.drag(rotateAntenna, start, up);
                     }
                     break;
-                case keys["space_bar"]:
+                case keys["c"]:
                     //add check to make sure user has interacted with antenna
                     if(trial.radius == Math.round(circle.attr("r")) &
                        trial.angle == Math.round(line.matrix.split().rotate)) {
                         alert("Please adjust the antenna to learn the station")
                     } else {
-                      $(document).unbind("keyup")
+                      $("#channel_label").css("border", "3px solid green");
+                      $(document).unbind("keyup") // remove other event listeners
+                      circle.undrag() // unbind the ability to modify the antenna
                       var radius_response = Math.round(circle.attr("r"));
                       var radius_param = convertStimParam(radius_response, scale_factor_radius, radius_lower_limit, min_param_scale);
+                      
+                      //  transform negative angle values
                       var orientation_response = Math.round(line.matrix.split().rotate);
+                      if(orientation_response < 0 & orientation_response >= -90) {
+              				orientation_response = orientation_response + 360;
+            		  }
+
                       var orientation_param = convertStimParam(orientation_response, scale_factor_orientation, rotation_lower_limit, min_param_scale);
                       var category_response;
                       // check if we are in the rule-based condition
@@ -1123,52 +1168,59 @@ var experiment = {
                         // if order1 then check antenna radius, else check orientation
                         if(order == "order1") {
                            if (radius_param < optimal_decision_boundary_param) {
-                            $("#category").text("1");
+                            $("#category").text("Channel 1");
                             $(".category_label").attr("style", "visibility: visible"); 
                             category_response = "A";
                             } else {
-                                $("#category").text("2");
+                                $("#category").text("Channel 2");
                                 $(".category_label").attr("style", "visibility: visible"); 
                                 category_response = "B";
                             }
                         } else { // otherwise we are in the radius order
                             if (orientation_param < optimal_decision_boundary_param) {
-                            $("#category").text("1");
+                            $("#category").text("Channel 1");
                             $(".category_label").attr("style", "visibility: visible"); 
                             category_response = "A";
                             } else {
-                                $("#category").text("2");
+                                $("#category").text("Channel 2");
                                 $(".category_label").attr("style", "visibility: visible"); 
                                 category_response = "B";
                             }
                         }
                       } else {  // otherwise we are in the information integration condition 
+                      	
+                      	//console.log("radius param: " + radius_param);
+                      	//console.log("angle param: " + orientation_param);
+
                         if(order == "order1") { // check order. here order determines the slope of the diagonal decision boundary
-                          if(perpDist(radius_param, orientation_param, -1, 1, 0) > 0) { // -1 parameter makes the slope of linear decision boundary positive. 0 is the y-intercept
-                            $("#category").text("1");
+                          if(orientation_param > radius_param) { 
+                            $("#category").text("Channel 1");
                             $(".category_label").attr("style", "visibility: visible");
                              category_response = "A";
                           } else {
-                            $("#category").text("2");
+                            $("#category").text("Channel 2");
                             $(".category_label").attr("style", "visibility: visible"); 
                             category_response = "B";
                           }
                         } else {
-                          if(perpDist(radius_param, orientation_param, -1, -1, 600) > 0) { // -1 parameters in makes slope of linear decision boundary negative. 600 is the y-intercept
-                            $("#category").text("1");
+                          if(orientation_param < 600 - radius_param) { 
+                            $("#category").text("Channel 1");
                             $(".category_label").attr("style", "visibility: visible");
                              category_response = "A";
                           } else {
-                            $("#category").text("2");
+                            $("#category").text("Channel 2");
                             $(".category_label").attr("style", "visibility: visible"); 
                             category_response = "B";
                         }
                       }
                     }
-                        
+                      
+                      //console.log("transformed radius: " + (600 - radius_param));
+                      //console.log("category is: " + category_response);
+
                       setTimeout(function(){
                         logDataTraining(category_response, radius_response, orientation_response, radius_param, orientation_param);
-                      }, 1500)
+                      }, 1000)
                       
                     }
                 default:
@@ -1176,6 +1228,8 @@ var experiment = {
           });
     } else if(trial.trial_type == "training" & // this should be "training"
               training_condition == "receptive") {
+
+    		$(".category_label").attr("style", "visibility: visible"); 
             // delay the timing of event handler so user can't respond before seeing the channel label
             setTimeout(function(){
               // user must press Z for channel 1 and X for channel 2
@@ -1201,7 +1255,7 @@ var experiment = {
                     default:
                     } 
               });       
-            }, 1000)
+            }, 1600)
             
 
     } else {

@@ -1,4 +1,4 @@
----
+s---
 title: "Active Learning Parameter Values"
 author: "Kyle MacDonald"
 date: "July 21, 2015"
@@ -7,7 +7,7 @@ output: html_document
 
 This script generates parameter values for active category learning experiment.
 
-Set seed so we can regenerate our sampling procedures.
+Set seed so we can recreate our sampling procedures.
 
 ```{r}
 set.seed(seed = 43)
@@ -218,8 +218,11 @@ perp_dist_function <- function(x, y, a, b, c) {
     distance <- (a*x + b*y + c) / (sqrt(a^2 + b^2))
     distance
 }
-perp_dist_function(x = 600, y = 300, a = -1, b = -1, c = 600)
+
+perp_dist_function(x = 300, y = 300, a = -1, b = -1, c = 600) # positive value, below the line
+perp_dist_function(x = 300, y = 300, a = -1, b = 1, c = 0) # positive value, above the line
 ```
+
 Show parameter values for all conditions and categories.
 
 ```{r, fig.height=6}
@@ -241,7 +244,6 @@ toJSON(df_3$X2) # A2 angles
 toJSON(df_4$X1) # B2 radii
 toJSON(df_4$X2) # B2 angles
 ```
-
 
 ## Test trials
 
@@ -303,7 +305,9 @@ distribution across potential parameter values.
 ```{r}
 qplot(test.trials.vals$radii, test.trials.vals$angles) +
     geom_hline(y = 300, color = "blue") +
-    geom_line(x = 300, color = "blue")
+    geom_line(x = 300, color = "blue") + 
+    geom_abline(intercept = 0, slope = 1) +
+    geom_abline(intercept = 600, slope = -1)
 ```
 
 ### Convert to JSON

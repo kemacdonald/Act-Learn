@@ -1,0 +1,105 @@
+---
+title: "Act-Learn Yoked Parameters"
+author: "Kyle MacDonald"
+date: "October 6, 2015"
+output: html_document
+---
+
+Set seed
+
+```{r}
+rm(list=ls())
+set.seed(5)
+```
+
+Load packages
+
+```{r}
+library(rjson)
+library(jsonlite)
+library(stringr)
+library(dplyr)
+library(magrittr)
+```
+
+## Yoked Learning Data
+
+Load active learners' sampling data
+
+```{r}
+df <- read.csv("../../data/act-learn-ii-rb-replication.csv")
+
+df %<>% 
+    filter(trial_type == "training", condition == "active") %>% 
+    select(subids, category_type, order, radius_response_param, orientation_response_param, 
+           trial_category, orientation_response_stim, radius_response_stim)
+```
+
+### Sample active learners data
+
+Need to get 56 participants, with 14 from each category (rb/ii) and order combination (1/2).
+
+```{r}
+df_subs <- df %>% 
+    group_by(subids, category_type) %>% 
+    distinct() %>% 
+    select(subids, category_type, order) %>% 
+    group_by(category_type)
+
+df_subs %>% group_by(category_type, order) %>% summarise(n())
+```
+
+```{r}
+subs <- sample_n(df_subs, size = 27, replace = F) %>% 
+    select(subids, order) %>% 
+    mutate(use_in_yoked = "yes")
+```
+
+```{r}
+subs %>% group_by(category_type, order) %>% summarise(n())
+```
+
+```{r}
+df <- left_join(df, subs, by = c("subids", "category_type", "order")) 
+df %<>% mutate(use_in_yoked = ifelse(is.na(use_in_yoked), "no", use_in_yoked))
+```
+
+Grab radius and orientation parameters for these participants.
+
+```{r}
+df_in_yoked <- filter(df, use_in_yoked == "yes")
+```
+
+```{r}
+grab_antenna_params <- function(df) {
+    radius.vals <- df$radius_response_param
+    orientation.vals <- df$orientation_response_param
+    radius.vals.stim <- df$radius_response_stim
+    orientation.vals.stim <- df$orientation_response_stim
+    category.vals <- df$trial_category
+    
+    list.vals <- list("radii" = radius.vals, "angles" = orientation.vals, 
+                      "radii_stim" = radius.vals.stim, "angles_stim" = orientation.vals.stim, 
+                      "category" = category.vals)
+    
+    return(list.vals)
+}
+
+df_final <- df_in_yoked %>% 
+    group_by(subids, category_type, order) %>% 
+    do(antenna_vals = data.frame(grab_antenna_params(.))) 
+    
+cond_indicator <- 1:nrow(df_final)
+
+df_final <- cbind(cond_indicator, df_final)
+```
+
+### Convert to JSON object
+
+Use jsonlite to convert data frame to JSON object to play nice with javascript.
+
+```{r}
+jsonlite::toJSON(df_final, complex = "string", pretty = F)
+```
+
+This is better because we don't have to do string replacement. yay!

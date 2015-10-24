@@ -28,9 +28,20 @@
         <div class="slide" id="instructions">
 
             <img src="../_shared/images/stanford.png" alt="Stanford University">
-                <p id='logo-text'>Stanford Language and Cognition Lab</p>
-              <p>In this experiment, you will learn how to categorize television antennas. <br>
-              The HIT should take ~10 minutes. <br>
+            <br><br>
+              <h>Stanford Language and Cognition Lab</h>
+
+              <br><br>
+              
+              <p>
+              This HIT will only work in GOOGLE CHROME and should take ~10-15 minutes
+              <br><br>
+
+              <b>PLEASE DO ONLY ONE HIT.</b> If you do multiple HITs, you will not be paid.
+
+              <br><br>
+              In this experiment, you will learn how to categorize television antennas. 
+              <br><br>
               Please pay attention, thanks! 
               </p>
     
@@ -94,7 +105,7 @@
                     <br><br>
                     Also, you will design many antennas, so you do not need to spend too much
                     time on each one. Once you are satisfied with your antenna, 
-                    <b>press the space bar</b> to learn what station it receives.
+                    <b>press C</b> to learn what station it receives.
                     <br><br>
                     Click the Continue button to begin.
                   </p>
@@ -109,13 +120,14 @@
         	<div class="progress"></div>
 
             <p id="task_instructions">
-              Press/release Z, then click/drag antenna L/R to adjust size. <br>
-              Press/release X, then click/drag antenna L/R to adjust angle. <br>
-              Press the space bar to learn the station.
+              To adjust <b>size</b>, press Z, then click/drag antenna L/R. <br>
+              To adjust <b>angle</b>, press X, then click/drag antenna L/R. <br>
+              To learn the station, <b>press C</b>.
             </p>
 
             <p id="receptive_instructions">
-              (Press Z if Ch1 OR X if Ch2) <br>
+              Z = Channel 1  <br>
+              X = Channel 2 <br><br>
               This antenna receives:          
             </p>
 
@@ -147,10 +159,16 @@
             </p> 
  -->
 
-            <!-- category label -->
-           <div class="category_label">
-              <p id="channel_label">Channel <span id="category">{{}}</span></p>
+            <!-- category label table-->
+            <div class="category_label">
+                <table id="category_label_table">
+                  <tr>
+                    <td id="adjust_mode" align="center"><span id="adjust"></span></td>
+                    <td id="channel_label" align="center"><span id="category"></span></td> 
+                  </tr>
+                </table>
            </div>
+
             <!-- antenna -->
            <div id ="antenna"></div>       
       </div>  
