@@ -5,24 +5,32 @@ date: "September 30, 2015"
 output: html_document
 ---
 
-
-This script analyzes data from an experiment testing the effectiveness of active
+This script analyzes data from a replication experiment testing the effectiveness of active
 vs. passive training in a category learning task. 
-
-This script 
 
 ## Libraries 
 
 ```{r libraries, warning=F, message=F, comment=F}
 rm(list=ls())
 source("helpers/useful.R")
+library(langcog)
 library(dplyr)
+library(magrittr)
 ```
 
 ## Load data
 
 ```{r load data}
-df <- read.csv("../data/act-learn-processed-data_rb.csv", stringsAsFactors = F)
+df <- read.csv("../data/act-learn-rb-original-replication.csv", stringsAsFactors = F)
+```
+
+## Grab just the first two blocks
+
+So we can analyze with the extension experiments, which only ran 2 blocks.
+
+```{r, eval=F}
+df_2blocks <- filter(df, block == 1 | block == 2)
+write.csv(df_2blocks, "../data/act-learn-replication-first2-blocks.csv")
 ```
 
 ## Exclusionary criteria
@@ -81,17 +89,23 @@ df <- left_join(df, select(ss_include, subids, include, condition), by = c("subi
 df <- df %>% filter(include == "include")
 ```
 
+## Remove participants how didn't understand the task
+
+```{r}
+df %<>% filter(understand == "Yes")
+```
+
 ## Descriptives
 
 ```{r demographics, echo=FALSE}
 demo_df <- df %>% 
     distinct(subids) %>% 
-    xtabs(formula = ~ condition) %>% 
+    xtabs(formula = ~ condition  + order) %>% 
     as.data.frame() %>% 
     rename(count = Freq)
 
 demo_df <- df %>% 
-    group_by(subids, condition) %>%
+    group_by(subids, condition, order) %>%
     summarise(exp_length_minutes = sum(rt) / 60000) %>% 
     group_by(condition) %>% 
     summarise(mean_exp_length = mean(exp_length_minutes)) %>% 
@@ -102,13 +116,6 @@ knitr::kable(demo_df)
 
 ## Descriptives
 
-Histogram of dependent variable across blocks: correct categorization of antennas
-on test trials.
-
-```{r, echo=F}
-qplot(correct, data=filter(df, trial_type=="test"), facets = condition~block)
-```
-
 Histogram of length of experiment split by condition 
 
 ```{r, echo=F}
@@ -117,13 +124,6 @@ ss_rt <- df %>%
     summarise(exp_length_min = sum(rt) / 60000)
 
 qplot(exp_length_min, data=ss_rt, facets=.~condition)
-```
-
-```{r}
-df %>% 
-    group_by(condition, subids) %>% 
-    summarise(exp_length_min = sum(rt) / 60000) %>% 
-    summarise(mean(exp_length_min))
 ```
 
 ## Overall accuracy analysis 
@@ -148,7 +148,7 @@ qplot(x=condition, y=mean_accuracy, data=ms,
                        ymax=mean_accuracy + ci_high), 
                    width = .05, size=0.6, position=position_dodge(width=0.9)) + 
     scale_fill_brewer(type = "qual", palette = "Set1") +
-    coord_cartesian(ylim=c(0,1)) +
+    coord_cartesian(ylim=c(0.5,1)) +
     theme_classic() +
     ylab("Mean Accuracy") +
     xlab("Condition") +
@@ -171,8 +171,9 @@ Plot accuracy over blocks
 
 ```{r acc by block plot, echo=F}
 qplot(x=block, y=mean_accuracy, data=ms_block, color = condition,
-      geom=c("point", "line"), stat="identity") + 
-    geom_linerange(aes(ymin=mean_accuracy - ci_low, 
+      geom=c("blank"), stat="identity") +
+    geom_smooth(method = "lm", se=F) +
+    geom_pointrange(aes(ymin=mean_accuracy - ci_low, 
                        ymax=mean_accuracy + ci_high), 
                    width = .05, size=0.6) + 
     scale_x_discrete() +
@@ -180,7 +181,7 @@ qplot(x=block, y=mean_accuracy, data=ms_block, color = condition,
     scale_color_brewer(type = "qual", palette = "Set1") +
     ylab("Mean Accuracy") +
     xlab("Block") +
-    theme_classic() +
+    theme_bw() +
     theme(text = element_text(size=16))
 ```
 
@@ -189,7 +190,7 @@ Accuracy by block and dimension.
 ```{r acc by block and dimension, echo=F}
 ms_block <- df %>%
     filter(trial_type == "test") %>%
-    group_by(condition, block_factor, order, category_type) %>%
+    group_by(condition, block_factor, order) %>%
     summarise(mean_accuracy = mean(correct),
               ci_high = ci.high(correct),
               ci_low = ci.low(correct))
@@ -199,7 +200,7 @@ Plot accuracy over blocks
 
 ```{r acc by block and dim plot, echo=F}
 qplot(x=block_factor, y=mean_accuracy, data=ms_block, color = condition,
-      geom=c("point", "line"), stat="identity", facets=category_type~order) + 
+      geom=c("point", "line"), stat="identity", facets=~order) + 
     geom_linerange(aes(ymin=mean_accuracy - ci_low, 
                        ymax=mean_accuracy + ci_high), 
                    width = .05, size=0.6) + 
@@ -218,52 +219,45 @@ Analyze the average distance of participants' samples from the optimal decision
 boundary.
 
 ```{r sampling data, echo=F}
-df_sampling <- df %>% filter(condition == "active", trial_type == "training")
+df %<>% mutate(trial_training_block = ifelse(condition == "active_receptive" & block == 1, "active",
+                                             ifelse(condition == "receptive_active" & block == 2,
+                                             "active", "receptive")))
+
+
+df_sampling <- df %>% filter(trial_type == "training", trial_training_block == "active")
 ```
 
 Rotate, so orientation and radius are on the same dimension.
 
+* dim of interest = dimension with category boundary
+* other dim = dimesnion that does not contain the category boundary 
+
 ```{r rotate samples, echo=F}
-# dim of interest = dimension with category boundary
-# other dim = dimesnion that does not contain the category boundary 
 df_sampling <- df_sampling %>%
     mutate(dim_of_interest = ifelse(odb_scale == "orientation_scale" & condition == "rule-based",
                                     orientation_response_param,
                                     radius_response_param),
            other_dim = ifelse(odb_scale == "orientation_scale" & condition == "rule-based",
                               radius_response_param,
-                              orientation_response_param)
-    )
+                              orientation_response_param))
 ```
 
 Plot group level sampling behavior.
 
 ```{r sampling plot, fig.width=8}
-a <- qplot(x=dim_of_interest, y=other_dim, data = filter(df_sampling, odb_param == "y>x"),
-      facets=.~block, color = trial_category) +
-    geom_abline(aes(intercept=0, slope = 1)) 
-
-b <- qplot(x=dim_of_interest, y=other_dim, data = filter(df_sampling, odb_param == "y<x"),
-      facets=.~block, color = trial_category) +
-    geom_abline(aes(intercept=600, slope = -1)) 
-
-gridExtra::grid.arrange(a, b, ncol = 1)
+qplot(x=dim_of_interest, y=other_dim, data = df_sampling,
+      facets=.~condition, color = trial_response) +
+    scale_color_brewer(type = "qual", palette = "Set1") +
+    geom_vline(xintercept = 300, color = "blue")
 ```
 
 Plot individual participant sampling behavior
 
 ```{r sampling subs, echo=F, fig.width=10}
-c <- qplot(x=dim_of_interest, y=other_dim, data=filter(df_sampling, category_type == "rule-based"),
+qplot(x=dim_of_interest, y=other_dim, data=df_sampling,
       color = block_factor) +
-    facet_grid(~subids) +
+    facet_wrap(~subids) +
     geom_vline(aes(xintercept=300)) 
-
-## TODO transform y = x, and y = -x sampling to put on the same plot
-qplot(x=dim_of_interest, y=other_dim,
-      data=filter(df_sampling, category_type == "information-integration"),
-      color = block_factor) +
-    facet_wrap(odb_stim~subids, ncol = 5) +
-    geom_abline(intercept = 0, slope = 1)
 ```
 
 Get distance from optimal decision boundary for each sample.
@@ -279,7 +273,7 @@ Now get the average distance across subjects
 
 ```{r}
 ms_sampling <- df_sampling %>%
-    group_by(block) %>%
+    group_by(condition) %>%
     summarize(mean_samp_dist = mean(samp_dist_odb),
               ci_high = ci.high(samp_dist_odb),
               ci_low = ci.low(samp_dist_odb))
@@ -288,12 +282,15 @@ ms_sampling <- df_sampling %>%
 Now plot.
 
 ```{r}
-qplot(x=block, y=mean_samp_dist, data=ms_sampling, 
+qplot(x=condition, y=mean_samp_dist, data=ms_sampling, 
       geom="line", ylim=c(75,225)) +
     geom_pointrange(aes(ymin=mean_samp_dist - ci_low, 
                         ymax=mean_samp_dist + ci_high), 
                     width = .05, size=0.6) +
-    scale_color_grey()
+    scale_color_grey() +
+    xlab("Block") +
+    ylab("Mean Sample Distance") +
+    theme(text = element_text(size=16))
 ```
 
 Compute average response times across blocks 
@@ -318,17 +315,6 @@ qplot(x=block, y=mean_rt, data=ms_rt,
     scale_color_grey()
 ```
 
-## Plot distribution of test trials
-
-```{r}
-df_test_trials <- df %>% filter(trial_type == "test")
-```
-
-```{r}
-qplot(x = radius_trial_param, y = orientation_trial_param, 
-      data = df_test_trials,
-      facets=order~category_type, color = trial_category) 
-```
 
 ## Relationship between sampling and test
 
@@ -336,29 +322,32 @@ Sample distance and accuracy
 
 ```{r}
 ss_samp_dist <- df_sampling %>%
-    filter(condition == "active") %>%
-    group_by(subids) %>%
+    filter(trial_training_block == "active") %>%
+    group_by(subids, condition) %>%
     summarise(mean_samp_dist = mean(samp_dist_odb),
               ci_high_msd = ci.high(samp_dist_odb),
               ci_low_msd = ci.low(samp_dist_odb))
 
 ss_mean_acc <- df %>%
-    filter(condition == "active") %>%
-    filter(trial_type == "test") %>%
-    group_by(subids) %>%
+    filter(trial_training_block == "active" & trial_type == "test") %>%
+    group_by(subids, condition) %>%
     summarise(mean_accuracy = mean(correct),
               ci_high_acc = ci.high(correct),
               ci_low_acc = ci.low(correct))
 
 # join sampling and test acc together
-ss_all <- inner_join(ss_samp_dist, ss_mean_acc, by="subids")
+ss_all <- inner_join(ss_samp_dist, ss_mean_acc, by=c("subids", "condition"))
 ```
 
 Plot
 
 ```{r}
 qplot(x=mean_samp_dist, y=mean_accuracy, data=ss_all) +
-    geom_smooth(method="lm")
+    geom_smooth(method="lm") +
+    facet_grid(~condition) +
+    xlab("Mean Sample Distance") +
+    ylab("Mean Accuracy") +
+    theme(text = element_text(size=16))
 ```
 
 ## Relationship between confidence and accuracy
@@ -366,9 +355,6 @@ qplot(x=mean_samp_dist, y=mean_accuracy, data=ss_all) +
 How to plot continuous predictor and binary outcome with lots of data?
 
 ```{r}
-#qplot(confidence, correct, data = filter(df, trial_type == "test"), 
-#      facets = condition~block)
-
 df %>%
     filter(trial_type == "test") %>%
     mutate(conf_level = cut(confidence, 8)) %>%
@@ -376,7 +362,11 @@ df %>%
     summarise(correct = mean(correct)) %>%
     ggplot(aes(x = conf_level, y = correct, col = condition, group = condition)) +
     geom_point() +
-    geom_smooth(se=FALSE)
+    geom_smooth(se=FALSE) + 
+    scale_color_brewer(type = "qual", palette = "Set1")  +
+    xlab("Binned Confidence Level") +
+    ylab("Mean Proportion Correct") +
+    theme(text = element_text(size=16))
 ```
 
 Predict accuracy based on confidence
@@ -405,7 +395,7 @@ Confidence predicts accuracy
 t.test testing difference in accuracy on test trials between active and receptive learning conditions.
 
 ```{r}
-t.test(mean_accuracy ~ condition, var.equal=TRUE, data=ss)
+t.test(mean_accuracy ~ condition, var.equal=TRUE, data=ss_all)
 ```
 
 Replicated the slight boost to accuracy in the active learning condition. 
@@ -426,7 +416,7 @@ were less accurate on test.
 Next, we try to predict correct based on condition.
 
 ```{r}
-m2 <- glmer(correct ~ condition + (1|subids), 
+m2 <- glmer(correct ~ condition * block + (1|subids), 
             data=filter(df,trial_type=="test"), family=binomial) 
 summary(m2)
 ```

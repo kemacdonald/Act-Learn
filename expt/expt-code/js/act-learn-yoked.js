@@ -1,9 +1,3 @@
-/* Todo:
-* remove size/angle mode td from html
-* double check data tracking 
-*/
-
-
 /*Shows slides. We're using jQuery here the $ is the jQuery selector function, 
 which takes as input either a DOM element or a CSS selector string. */
 function showSlide(id) {

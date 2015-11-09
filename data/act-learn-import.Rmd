@@ -17,7 +17,7 @@ library(lubridate)
 Set working directory to where you stored raw JSON files.
 
 ```{r}
-setwd("../../ACT-LEARN-RAW-DATA/data_summary/ii_rb_2_replication/")
+setwd("../../ACT-LEARN-RAW-DATA/data_summary/sequence_1_extension/")
 ```
 
 # Read in all the JSON strings
@@ -109,10 +109,6 @@ trial.data <- strip.rownames(do.call(rbind, trial.data))
 df_final <- left_join(sub_exp_df, trial.data, by="workerid")
 ```
 
-Remove 5 extra subjects run in the receptive, radius condition. This was caused by 
-a randomization bug. 
-
-Here we accomplish this by only keeping the first 12 subjects run in this condition/order.
 
 ```{r flag extra subs}
 # This drops the weirdo T and Z from the turk timestamps and then parses them into seconds time 0 (some UTC standard)
@@ -162,6 +158,6 @@ df_final_clean <- df_final_clean %>%
 ## Save output 
 
 ```{r comment=NA}
-write.csv(x = df_final_clean, file = "../../../ACT-LEARN_GIT/data/act-learn-ii-rb-replication.csv",
+write.csv(x = df_final_clean, file = "../../../ACT-LEARN_GIT/data/act-learn-sequence-1.csv",
           row.names=F)
 ```

@@ -127,9 +127,10 @@ df_abline1 <- data.frame(condition = c("1", "2"), y_intercept = c(-10, 300), x_i
 
 plot1 <- qplot(radii, orientation, color = category, data=df_final, size = 1,
                facets = condition ~ ., xlim=c(0,600), ylim=c(0,600)) + 
-    geom_hline(data=df_abline1, aes(yintercept = y_intercept), color = "blue", size = 1) +
-    geom_vline(data=df_abline1, aes(xintercept = x_intercept), color = "blue", size = 1) +
-    guides(size = F, color = F)
+    geom_hline(data=df_abline1, aes(yintercept = y_intercept), color = "darkgrey", size = 1) +
+    geom_vline(data=df_abline1, aes(xintercept = x_intercept), color = "darkgrey", size = 1) +
+    guides(size = F, color = F) +
+    scale_color_brewer(type = "qual", palette = "Set1") 
 
 plot1
 ```
@@ -205,8 +206,9 @@ plot2 <- qplot(radii, orientation, data = df_final2, color = category, size = 1,
     xlim(0, 600) +
     ylim(0, 600) +
     geom_abline(data = df_abline, aes(intercept=intercept, slope=slope), 
-                color = "blue", size = 1) +
-    guides(size = F)
+                color = "darkgrey", size = 1) +
+    guides(size = F, color=F) + 
+    scale_color_brewer(type = "qual", palette = "Set1") 
     
 plot2
 ```

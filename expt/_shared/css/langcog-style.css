@@ -28,6 +28,21 @@ table {
 	padding-bottom: 40px;
 }
 
+#instructions_text_receptive_summary {
+	text-align: justify;
+	margin: auto;
+	width: 75%;
+	padding-bottom: 40px;
+}
+
+#instructions_text_active_summary {
+	text-align: justify;
+	margin: auto;
+	width: 75%;
+	padding-bottom: 40px;
+}
+
+
 /*the experiment happens in "slides"*/
 .slide {
 	/*pad the inside of the slide*/
@@ -186,8 +201,6 @@ button:active {
 /* Progress Bar */
 .progress{
   position: absolute;
-  right: 225px;
-  top: 20px;
   height:30px;
   width:200px;
   visibility: hidden;

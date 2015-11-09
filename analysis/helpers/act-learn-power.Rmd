@@ -5,7 +5,7 @@ date: "July 28, 2015"
 output: html_document
 ---
 
-# Calculate effect size 
+# Power Analysis
 
 For Markant and Gureckis, 2014 active learning vs. passive learning t.test.
 
@@ -16,7 +16,7 @@ library(compute.es)
 library(pwr)
 ```
 
-Relevant values from independent samples t.test.
+## Post hoc power Markant and Gureckis, 2014 
 
 ```{r}
 t.val <- 1.82
@@ -26,7 +26,7 @@ es <- tes(t.val, n.1, n.2)
 cohens.d <- es$d
 ```
 
-Effect size from MacDonald, 2015 replication 
+### Effect size from MacDonald, 2015 replication 
 
 ```{r}
 t.val.km <- 2.3683
@@ -36,8 +36,26 @@ es.km <- tes(t.val.km, n.1.km, n.2.km)
 cohens.d.km <- es.km$d
 ```
 
-A priori power analysis for full replication experiment
+### A priori power analysis for full replication experiment
 
 ```{r}
 pwr.t.test(d=cohens.d.km,power=0.8,sig.level=0.05,type="two.sample",alternative="greater")
+```
+
+### Act-learn Sequence Power
+
+First, we get the effect size for the mean difference between AR and RA groups.
+
+```{r}
+t.val.seq <- -1.5475
+n.1.seq <- 29
+n.2.seq <- 23
+es.seq <- tes(t.val.seq, n.1.seq, n.2.seq)
+d.seq <- es.seq$d
+```
+
+Next, we compute an a priori power analysis to detect this effect
+
+```{r}
+pwr.t.test(d = d.seq, power = 0.8, sig.level = 0.05, type = "two.sample", alternative = "two.sided")
 ```

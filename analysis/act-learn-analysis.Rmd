@@ -4,7 +4,7 @@ author: "Kyle MacDonald"
 output: html_document
 ---
 
-This script analyzes data from an experiment testing the effectiveness of active, passive, and pedagogical training in a category learning task.
+This script analyzes data from an experiment testing the effectiveness of active, passive, and yoked training in a category learning task.
 
 ```{r}
 rm(list=ls())
@@ -24,7 +24,7 @@ library(magrittr)
 ## Load data
 
 ```{r load data}
-df <- read.csv("../data/act-learn-ii-rb-replication.csv", stringsAsFactors = F)
+df <- read.csv("../data/act-learn-sequence-test.csv", stringsAsFactors = F)
 ```
 
 ## Exclusionary criteria
@@ -201,43 +201,15 @@ ms_block <- df %>%
 Plot accuracy over blocks
 
 ```{r acc by block plot, echo=F}
-qplot(x=block_factor, y=mean_accuracy, data=ms_block, color = condition,
-      geom=c("point", "line"), stat="identity", linetype = category_type, 
-      shape = category_type) + 
-    geom_linerange(aes(ymin=mean_accuracy - ci_low, 
+qplot(x=block_factor, y=mean_accuracy, data=ms_block, color = condition, 
+      group=interaction(condition, category_type), shape = condition,
+      geom=c("point", "line"), stat="identity", linetype = category_type) + 
+    geom_pointrange(aes(ymin=mean_accuracy - ci_low, 
                        ymax=mean_accuracy + ci_high), 
                    width = .05, size=0.6) + 
     scale_x_discrete() +
-    scale_y_continuous(limits=c(0,1)) +
+    scale_y_continuous(limits=c(0.5,0.9)) +
     scale_color_brewer(type = "qual", palette = "Set1") +
-    ylab("Mean Accuracy") +
-    xlab("Block") +
-    theme_classic() +
-    theme(text = element_text(size=16))
-```
-
-Accuracy by block and dimension.
-
-```{r acc by block and dimension, echo=F}
-ms_block <- df %>%
-    filter(trial_type == "test") %>%
-    group_by(condition, block_factor, order, category_type) %>%
-    summarise(mean_accuracy = mean(correct),
-              ci_high = ci.high(correct),
-              ci_low = ci.low(correct))
-```
-
-Plot accuracy over blocks
-
-```{r acc by block and dim plot, echo=F}
-qplot(x=block_factor, y=mean_accuracy, data=ms_block, color = condition,
-      geom=c("point", "line"), stat="identity", facets = order ~ category_type) + 
-    geom_linerange(aes(ymin=mean_accuracy - ci_low, 
-                       ymax=mean_accuracy + ci_high), 
-                   width = .05, size=0.6) + 
-    scale_color_brewer(type = "qual", palette = "Set1") +
-    scale_y_continuous(limits=c(0,1)) +
-    scale_x_discrete() +
     ylab("Mean Accuracy") +
     xlab("Block") +
     theme_bw() +
@@ -283,18 +255,28 @@ df_sampling_info_integration <- df_sampling %>%
 # Rule-based
 a <- qplot(x = category_dimension, y = other_dimension, data = df_sampling_rule_based,
       facets=.~block, color = trial_category) +
-    geom_vline(xintercept = 300)
+    geom_vline(xintercept = 300) + 
+    scale_colour_manual(values=c("#1f78b4", "red")) +
+    xlab("Dimension 1") +
+    ylab("Dimension 2")
 
 # Information-integration
 b <- qplot(x = radius_response_param, y = orientation_response_param, 
            data = filter(df_sampling_info_integration, odb_param == "y>x"),
       facets=.~block, color = trial_category) +
-    geom_abline(aes(intercept=0, slope = 1)) 
+    geom_abline(aes(intercept=0, slope = 1)) +
+    scale_colour_manual(values=c("#1f78b4", "red")) +
+    xlab("Dimension 1") +
+    ylab("Dimension 2")
+
 
 c <- qplot(x = radius_response_param, y = orientation_response_param, 
            data = filter(df_sampling_info_integration, odb_param == "y<x"),
       facets=.~block, color = trial_category) +
-    geom_abline(aes(intercept=600, slope = -1)) 
+    geom_abline(aes(intercept=600, slope = -1)) +
+    scale_colour_manual(values=c("#1f78b4", "red")) +
+    xlab("Dimension 1") +
+    ylab("Dimension 2")
 
 gridExtra::grid.arrange(a, b, c, ncol = 1)
 ```
@@ -346,19 +328,22 @@ Now get the average distance across subjects
 ```{r}
 ms_sampling <- df_sampling_analysis %>%
     group_by(block, category_type) %>%
-    summarize(mean_samp_dist = mean(samp_dist_odb),
-              ci_high = ci.high(samp_dist_odb),
-              ci_low = ci.low(samp_dist_odb))
+    summarize(mean_samp_dist = mean(samp_dist_odb, na.rm=T),
+              ci_high = ci.high(samp_dist_odb, na.rm=T),
+              ci_low = ci.low(samp_dist_odb, na.rm=T))
 ```
 
 Now plot.
 
 ```{r}
 qplot(x=block, y=mean_samp_dist, data=ms_sampling, 
-      geom="line", ylim=c(75, 280), color = category_type) +
+      geom="line", ylim=c(75, 280), color = category_type, group = category_type) +
     geom_pointrange(aes(ymin=mean_samp_dist - ci_low, 
                         ymax=mean_samp_dist + ci_high), 
-                    width = .05, size=0.6) 
+                    width = .05, size=0.6) +
+    ylab("Mean Sample Distance") +
+    xlab("Block") + 
+    scale_colour_manual(values=c("#1f78b4", "red")) 
 ```
 
 Compute average response times across blocks 
@@ -379,19 +364,8 @@ qplot(x=as.factor(block), y=mean_rt, data=ms_rt,
       geom="line", color = category_type, group = category_type) +
     geom_pointrange(aes(ymin=mean_rt - ci_low, 
                         ymax=mean_rt + ci_high), 
-                    width = .05, size=0.6) 
-```
-
-## Plot distribution of test trials
-
-```{r}
-df_test_trials <- df %>% filter(trial_type == "test")
-```
-
-```{r}
-qplot(x = radius_trial_param, y = orientation_trial_param, 
-      data = df_test_trials,
-      facets=order~category_type, color = trial_category) 
+                    width = .05, size=0.6) +
+    scale_colour_manual(values=c("#1f78b4", "red")) 
 ```
 
 ## Relationship between sampling and test
@@ -420,7 +394,9 @@ Plot
 
 ```{r}
 qplot(x=mean_samp_dist, y=mean_accuracy, facets = category_type ~ block, data=ss_all) +
-    geom_smooth(method="lm")
+    geom_smooth(method="lm") +
+    xlab("Mean Sample Distance") +
+    ylab("Mean Accuracy")
 ```
 
 ## Histogram mean accuracy 
