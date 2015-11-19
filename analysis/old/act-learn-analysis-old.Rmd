@@ -1,0 +1,479 @@
+---
+title: "Act-Learn Analysis"
+author: "Kyle MacDonald"
+output: html_document
+---
+
+This script analyzes data from an experiment testing the effectiveness of active, passive, and yoked training in a category learning task.
+
+```{r}
+rm(list=ls())
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, sanitize = T, 
+                      fig.height=6, fig.width=9, echo=F, cache = T)
+
+```
+
+## Libraries 
+
+```{r libraries, warning=F, message=F, comment=F}
+source("helpers/useful.R")
+library(dplyr)
+library(magrittr)
+```
+
+## Load data
+
+```{r load data}
+df <- read.csv("../data/act-learn-sequence-test.csv", stringsAsFactors = F)
+```
+
+## Exclusionary criteria
+
+Overall performance (averaged across blocks) was more than three standard deviations below the mean of their group.
+
+```{r exclusionary}
+ss <- df %>%
+    filter(trial_type == "test") %>%
+    group_by(subids, condition, category_type) %>%
+    summarise(mean_accuracy = mean(correct),
+              ci_high_acc = ci.high(correct),
+              ci_low_acc = ci.low(correct))
+
+# get the mean and standard deviation of each group
+ms_ss <- ss %>%
+    group_by(condition, category_type) %>%
+    summarise(group_mean = mean(mean_accuracy),
+              group_sd = sd(mean_accuracy))
+```
+
+Map means and sd to variables
+
+```{r}
+# active rb
+mean_act_rb <- filter(ms_ss, condition == "active", category_type == "rule-based")$group_mean
+sd_act_rb <- filter(ms_ss, condition == "active", category_type == "rule-based")$group_sd
+
+# active ii
+mean_act_ii <- filter(ms_ss, condition == "active", category_type == "information-integration")$group_mean
+sd_act_ii <- filter(ms_ss, condition == "active", category_type == "information-integration")$group_sd
+
+# receptive rb
+mean_rec_rb <- filter(ms_ss, condition == "receptive", category_type == "rule-based")$group_mean
+sd_rec_rb <- filter(ms_ss, condition == "receptive", category_type == "rule-based")$group_sd
+
+# receptive ii
+mean_rec_ii <- filter(ms_ss, condition == "receptive", 
+                      category_type == "information-integration")$group_mean
+
+sd_rec_ii <- filter(ms_ss, condition == "receptive", 
+                    category_type == "information-integration")$group_sd
+```
+
+Flag subject means that are +/- 3sd 
+
+```{r}
+ss_include <- ss %>%
+    mutate(
+        include = ifelse(condition == "active" & category_type == "rule-based", 
+                         ifelse(mean_accuracy > mean_act_rb + 3 * sd_act_rb | mean_accuracy < mean_act_rb - 3 * sd_act_rb, "remove", "include"),
+                         ifelse(condition == "active" & category_type == "information-integration",
+                                ifelse(mean_accuracy > mean_act_ii + 3 * sd_act_ii | mean_accuracy < mean_act_ii - 3 * sd_act_ii, "remove", "include"),
+                                ifelse(condition == "receptive" & category_type =="rule-based",
+                                       ifelse(mean_accuracy > mean_rec_rb + 3 * sd_rec_rb | mean_accuracy < mean_rec_rb - 3 * sd_rec_rb, "remove", "include"),
+                                       ifelse(condition == "receptive" & category_type =="information-integration",
+                                              ifelse(mean_accuracy > mean_rec_ii + 3 * sd_rec_ii | mean_accuracy < mean_rec_ii - 3 * sd_rec_ii, "remove",
+                                                     "include")))))) %>% 
+    select(subids, include, condition, category_type, mean_accuracy) 
+
+ss_include %>%
+    group_by(condition, include, category_type) %>%
+    summarise(n())
+
+# merge with full data frame
+df <- left_join(df, select(ss_include, subids, include), by = c("subids", "condition"))
+
+# filter out subjects that are +/- 3sd
+df <- df %>% filter(include == "include")
+```
+
+## Descriptives
+
+```{r demographics, echo=FALSE}
+demo_df <- df %>% 
+    distinct(subids) %>% 
+    xtabs(formula = ~ condition + category_type + order) %>% 
+    as.data.frame() %>% 
+    rename(count = Freq)
+
+demo_df <- df %>% 
+    group_by(subids, condition, category_type, order) %>%
+    summarise(exp_length_minutes = sum(rt) / 60000) %>% 
+    group_by(condition, category_type) %>% 
+    summarise(mean_exp_length = mean(exp_length_minutes)) %>% 
+    left_join(demo_df, by = c("condition", "category_type"))
+    
+knitr::kable(demo_df)
+```
+
+## Descriptives
+
+Histogram of length of experiment split by condition 
+
+```{r, echo=F}
+ss_rt <- df %>%
+    group_by(subids, condition) %>%
+    summarise(exp_length_min = sum(rt) / 60000)
+
+qplot(exp_length_min, data=ss_rt, facets=.~condition)
+```
+
+```{r}
+df %>% 
+    group_by(condition, subids) %>% 
+    summarise(exp_length_min = sum(rt) / 60000) %>% 
+    summarise(mean(exp_length_min))
+```
+
+## Overall accuracy analysis 
+
+Get mean accuracy for each condition and category type
+
+```{r, echo=F}
+ms <- df %>%
+    filter(trial_type == "test") %>%
+    group_by(condition, category_type) %>%
+    summarise(mean_accuracy = mean(correct),
+              ci_high = ci.high(correct),
+              ci_low = ci.low(correct))
+
+ms_2 <- df %>%
+    filter(trial_type == "test") %>%
+    group_by(condition, category_type, order) %>%
+    summarise(mean_accuracy = mean(correct),
+              ci_high = ci.high(correct),
+              ci_low = ci.low(correct))
+```
+
+Plot.
+
+```{r mean acc plot condition/order, echo=F}
+a <- qplot(x=category_type, y=mean_accuracy, data=ms,
+      geom="bar", stat="identity", fill = condition, position = "dodge") + 
+    geom_linerange(aes(ymin=mean_accuracy - ci_low, 
+                       ymax=mean_accuracy + ci_high), 
+                   width = .05, size=0.6, position=position_dodge(width=0.9)) + 
+    scale_fill_brewer(type = "qual", palette = "Set1") +
+    coord_cartesian(ylim=c(0.4,1)) +
+    ylab("Mean Accuracy") +
+    xlab("Category Type") +
+    theme(text = element_text(size=16)) +
+    geom_hline(yintercept = 0.5) +
+    theme_bw() 
+
+b <- qplot(x=category_type, y=mean_accuracy, data=ms_2,
+      geom="bar", stat="identity", fill = condition, position = "dodge") + 
+    geom_linerange(aes(ymin=mean_accuracy - ci_low, 
+                       ymax=mean_accuracy + ci_high), 
+                   width = .05, size=0.6, position=position_dodge(width=0.9)) + 
+    scale_fill_brewer(type = "qual", palette = "Set1") +
+    coord_cartesian(ylim=c(0.4,1)) +
+    facet_wrap(~order) +
+    ylab("Mean Accuracy") +
+    xlab("Category Type") +
+    geom_hline(yintercept = 0.5) +
+    theme(text = element_text(size=16)) +
+    theme_bw() 
+
+gridExtra::grid.arrange(a, b)
+```
+
+## Accuracy by block analysis
+
+```{r acc by block, echo=F}
+ms_block <- df %>%
+    filter(trial_type == "test") %>%
+    group_by(condition, category_type, block_factor) %>%
+    summarise(mean_accuracy = mean(correct),
+              ci_high = ci.high(correct),
+              ci_low = ci.low(correct))
+```
+
+Plot accuracy over blocks
+
+```{r acc by block plot, echo=F}
+qplot(x=block_factor, y=mean_accuracy, data=ms_block, color = condition, 
+      group=interaction(condition, category_type), shape = condition,
+      geom=c("point", "line"), stat="identity", linetype = category_type) + 
+    geom_pointrange(aes(ymin=mean_accuracy - ci_low, 
+                       ymax=mean_accuracy + ci_high), 
+                   width = .05, size=0.6) + 
+    scale_x_discrete() +
+    scale_y_continuous(limits=c(0.5,0.9)) +
+    scale_color_brewer(type = "qual", palette = "Set1") +
+    ylab("Mean Accuracy") +
+    xlab("Block") +
+    theme_bw() +
+    theme(text = element_text(size=16))
+```
+
+## Evidence selection analysis (active learning)
+
+Analyze the average distance of participants' samples from the optimal decision
+boundary.
+
+```{r sampling data, echo=F}
+df_sampling <- df %>% filter(condition == "active", trial_type == "training")
+```
+
+Rotate, so orientation and radius are on the same dimension.
+
+* dim of interest = dimension with category boundary
+* other dim = dimesnion that does not contain the category boundary
+
+```{r rotate samples, echo=F}
+df_sampling_rule_based <- df_sampling %>%
+    filter(category_type == "rule-based") %>% 
+    mutate(category_dimension = ifelse(odb_scale == "orientation_scale",
+                                    orientation_response_param,
+                                    radius_response_param),
+           other_dimension = ifelse(odb_scale == "orientation_scale",
+                              radius_response_param,
+                              orientation_response_param))
+
+```
+
+Transform information-integration samples
+
+```{r rotate samples ii}
+df_sampling_info_integration <- df_sampling %>% 
+    filter(category_type == "information-integration")
+```
+
+## Plot group level sampling behavior.
+
+```{r sampling plot, fig.width=8}
+# Rule-based
+a <- qplot(x = category_dimension, y = other_dimension, data = df_sampling_rule_based,
+      facets=.~block, color = trial_category) +
+    geom_vline(xintercept = 300) + 
+    scale_colour_manual(values=c("#1f78b4", "red")) +
+    xlab("Dimension 1") +
+    ylab("Dimension 2")
+
+# Information-integration
+b <- qplot(x = radius_response_param, y = orientation_response_param, 
+           data = filter(df_sampling_info_integration, odb_param == "y>x"),
+      facets=.~block, color = trial_category) +
+    geom_abline(aes(intercept=0, slope = 1)) +
+    scale_colour_manual(values=c("#1f78b4", "red")) +
+    xlab("Dimension 1") +
+    ylab("Dimension 2")
+
+
+c <- qplot(x = radius_response_param, y = orientation_response_param, 
+           data = filter(df_sampling_info_integration, odb_param == "y<x"),
+      facets=.~block, color = trial_category) +
+    geom_abline(aes(intercept=600, slope = -1)) +
+    scale_colour_manual(values=c("#1f78b4", "red")) +
+    xlab("Dimension 1") +
+    ylab("Dimension 2")
+
+gridExtra::grid.arrange(a, b, c, ncol = 1)
+```
+
+## Plot individual participant sampling behavior
+
+```{r sampling subs, echo=F, fig.width=10}
+qplot(x=category_dimension, y=other_dimension, data=filter(df_sampling_rule_based),
+      color = as.factor(block_factor)) +
+    facet_wrap(~subids) +
+    geom_vline(aes(xintercept=300)) 
+```
+
+
+```{r}
+e <- qplot(x = radius_response_param, y = orientation_response_param,
+      data=filter(df_sampling_info_integration, odb_param == "y>x"),
+      color = as.factor(block_factor)) +
+    facet_wrap(~subids) +
+    geom_abline(intercept = 0, slope = 1) 
+    
+
+f <- qplot(x = radius_response_param, y = orientation_response_param,
+      data=filter(df_sampling_info_integration, odb_param == "y<x"),
+      color = as.factor(block_factor)) +
+    facet_wrap(~subids) +
+    geom_abline(intercept = 600, slope = -1)
+
+gridExtra::grid.arrange(e, f, ncol = 2)
+```
+
+Get distance from optimal decision boundary for each sample.
+
+```{r}
+df_sampling_rb <- mutate(df_sampling_rule_based, 
+                      samp_dist_odb = ifelse(odb_scale == "orientation",
+                                             abs(as.integer(odb_param) - orientation_response_param),
+                                             abs(as.integer(odb_param) - radius_response_param))) %>% 
+    select(-category_dimension, - other_dimension)
+
+df_sampling_info_integration %<>% 
+    mutate(samp_dist_odb = abs(orientation_response_param - radius_response_param))
+
+df_sampling_analysis <- bind_rows(df_sampling_rb, df_sampling_info_integration)
+```
+
+Now get the average distance across subjects
+
+```{r}
+ms_sampling <- df_sampling_analysis %>%
+    group_by(block, category_type) %>%
+    summarize(mean_samp_dist = mean(samp_dist_odb, na.rm=T),
+              ci_high = ci.high(samp_dist_odb, na.rm=T),
+              ci_low = ci.low(samp_dist_odb, na.rm=T))
+```
+
+Now plot.
+
+```{r}
+qplot(x=block, y=mean_samp_dist, data=ms_sampling, 
+      geom="line", ylim=c(75, 280), color = category_type, group = category_type) +
+    geom_pointrange(aes(ymin=mean_samp_dist - ci_low, 
+                        ymax=mean_samp_dist + ci_high), 
+                    width = .05, size=0.6) +
+    ylab("Mean Sample Distance") +
+    xlab("Block") + 
+    scale_colour_manual(values=c("#1f78b4", "red")) 
+```
+
+Compute average response times across blocks 
+for the two different dimensions.  
+
+```{r rt over blocks}
+ms_rt <- df_sampling %>%
+    group_by(block, category_type) %>%
+    summarise(mean_rt = mean(rt),
+              ci_high = ci.high(rt),
+              ci_low = ci.low(rt))
+```
+
+Now plot.
+
+```{r}
+qplot(x=as.factor(block), y=mean_rt, data=ms_rt,
+      geom="line", color = category_type, group = category_type) +
+    geom_pointrange(aes(ymin=mean_rt - ci_low, 
+                        ymax=mean_rt + ci_high), 
+                    width = .05, size=0.6) +
+    scale_colour_manual(values=c("#1f78b4", "red")) 
+```
+
+## Relationship between sampling and test
+
+Sample distance and accuracy
+
+```{r}
+ss_samp_dist <- df_sampling_analysis %>%
+    group_by(subids, block, category_type) %>%
+    summarise(mean_samp_dist = mean(samp_dist_odb),
+              ci_high_msd = ci.high(samp_dist_odb),
+              ci_low_msd = ci.low(samp_dist_odb))
+
+ss_mean_acc <- df %>%
+    filter(condition == "active", trial_type == "test") %>%
+    group_by(subids, block, category_type) %>%
+    summarise(mean_accuracy = mean(correct),
+              ci_high_acc = ci.high(correct),
+              ci_low_acc = ci.low(correct))
+
+# join sampling and test acc together
+ss_all <- left_join(ss_samp_dist, ss_mean_acc, by = c("subids" , "block", "category_type"))
+```
+
+Plot
+
+```{r}
+qplot(x=mean_samp_dist, y=mean_accuracy, facets = category_type ~ block, data=ss_all) +
+    geom_smooth(method="lm") +
+    xlab("Mean Sample Distance") +
+    ylab("Mean Accuracy")
+```
+
+## Histogram mean accuracy 
+
+By block
+
+```{r}
+qplot(mean_accuracy, facets = block ~ category_type, data = ss_all)
+```
+
+Collapsed
+
+```{r}
+qplot(mean_accuracy, facets = ~ category_type, data = ss)
+```
+
+## LMERs
+
+Model the relationship between mean sampling distance on training trials and mean accuracy
+on test trials.
+
+```{r}
+m1 <- lm(mean_accuracy ~ mean_samp_dist * block, data=ss_all)
+summary(m1)
+```
+
+Negative relationship such that those subjects who sampled farther away from the boundary
+were less accurate on test, but only in the second active learning block.
+
+Next, we try to predict correct based on condition
+
+```{r}
+m2 <- glmer(correct ~ condition * category_type + (1|subids), 
+            data=filter(df,trial_type=="test"), family=binomial) 
+
+summary(m2)
+```
+
+Effect coding (condition vs. category type) to test main effects.
+
+```{r}
+## set vars to factor
+df %<>%
+    mutate(category_type_factor = as.factor(category_type),
+           condition_factor = as.factor(condition))
+
+## effect code (choose contrasts based on how you want to interpret model output)
+contrasts(df$category_type_factor) <- cbind("base=rb" = c(1, -1))
+contrasts(df$condition_factor) <- cbind("base=passive" = c(1, -1))
+```
+
+Model with effect coding. 
+
+```{r}
+m3 <- glmer(correct ~ condition_factor * category_type_factor + (1|subids), 
+            data=filter(df,trial_type=="test"), family=binomial) 
+
+summary(m3)
+```
+
+Intercept is the mean of the means (or the grand mean) of all the groups. These data are unbalanced.
+Active better than passive. Information integration worse than rule-based.
+
+# MCF random stuff
+
+```{r}
+sdist <- df_sampling_analysis %>%
+    group_by(subids) %>%
+    mutate(num = 1:n(),
+           binned_trial = ceiling(num/8)) %>%
+    group_by(subids, binned_trial, condition, category_type) %>%
+    summarise(sample_dist_odb = mean(samp_dist_odb))
+
+qplot(binned_trial, sample_dist_odb, 
+      group=subids, col = factor(subids), geom="line", 
+      data=sdist) + 
+    facet_grid(condition~category_type) + 
+    geom_smooth(aes(group=1), method="loess", col="black", size = 2)
+
+```

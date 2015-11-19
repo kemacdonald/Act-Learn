@@ -13,4 +13,8 @@ ggm
 psych
 tidyr
 dplyr
+langcog
 magrittr
+quadprog
+directlabels
+proto

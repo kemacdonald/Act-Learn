@@ -14,6 +14,20 @@ table {
 	padding-bottom: 40px;
 }
 
+#instructions_text_rb {
+	text-align: justify;
+	margin: auto;
+	width: 75%;
+	padding-bottom: 40px;
+}
+
+#instructions_text_ii {
+	text-align: justify;
+	margin: auto;
+	width: 75%;
+	padding-bottom: 40px;
+}
+
 #instructions_text_active {
 	text-align: justify;
 	margin: auto;

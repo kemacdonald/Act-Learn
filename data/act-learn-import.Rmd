@@ -43,6 +43,12 @@ json.superstring <- paste("[",paste(json.strings, collapse = ","),"]")
 assignments <- fromJSON( json.superstring )
 ```
 
+Only keep unique worker IDs.
+
+```{r comment=NA}
+assignments <- distinct(assignments, WorkerId)
+```
+
 ## Build experiment information data frame.
 
 ```{r comment=NA}
@@ -57,8 +63,6 @@ exp_df <- data.frame(
     condition = assignments$answers$condition,
     order = assignments$answers$order,
     category_type = assignments$answers$category_type,
-    scale_factor_radius = assignments$answers$scale_factor_radius,
-    scale_factor_orientation = assignments$answers$scale_factor_orientation,
     browser = assignments$answers$browser
 )
 ```
@@ -106,6 +110,9 @@ trial.data <- strip.rownames(do.call(rbind, trial.data))
 ## Merge trial level data with subject/experiment level data
 
 ```{r comment=NA}
+sub_exp_df <- mutate(sub_exp_df, workerid = as.character(workerid))
+trial.data <- mutate(trial.data, workerid = as.character(workerid))
+
 df_final <- left_join(sub_exp_df, trial.data, by="workerid")
 ```
 
@@ -119,30 +126,12 @@ df_final$approval_time <- parse_date_time(
 )
 ```
 
-## Anonymize subject ids
-
-```{r comment=NA}
-# anonymize subject ids by giving them a value 1:num_subjects
-anonymize.sids <- function(df, subject_column_label) {
-  subj_col = which(names(df) == subject_column_label) # get workerid column index
-  temp <- data.frame(workerid = unique(df[,subj_col])) # make new df of unique workerids
-  temp$subid <- 1:length(unique(df[,subj_col])) # make list of subids
-  index <- match(df[,subj_col], temp$workerid) 
-  df$subids <- temp$subid[index]
-  df[,subj_col] <- NULL 
-  df$subids  = as.factor(df$subids)
-  return(df)
-}
-
-df_final_clean <- anonymize.sids(df_final, "workerid")
-```
-
 Do some final clean-up:
 - Recode variable values from numeric to meaningful text
 - Rename column 
 
 ```{r comment=NA}
-df_final_clean <- df_final_clean %>%
+df_final <- df_final %>%
     rename(understand = asses) %>%
     mutate(enjoyment = revalue(enjoyment, c("0" = "Worse Than Average",
                          "1" = "Average",
@@ -158,6 +147,5 @@ df_final_clean <- df_final_clean %>%
 ## Save output 
 
 ```{r comment=NA}
-write.csv(x = df_final_clean, file = "../../../ACT-LEARN_GIT/data/act-learn-sequence-1.csv",
-          row.names=F)
+write.csv(x = df_final, file = "../../data_processed/act-learn-sequence-all.csv", row.names=F)
 ```

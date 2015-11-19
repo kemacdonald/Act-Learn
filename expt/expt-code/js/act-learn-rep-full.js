@@ -771,6 +771,8 @@ var experiment = {
     // get trial information from trial array
     trial = trials.shift();
 
+    console.log(trial.angle_param)
+
   		// remove category label text from previous trial
   		$("#category").text("");
 
@@ -938,7 +940,6 @@ var experiment = {
         rotateAntenna = function(dx) {
             var angleDiff = dx - prevDx,
             rot_angle = Math.round(line.matrix.split().rotate)
-
 
             // transfrom degree values between 0 and -90 degrees to make all angle values positive
             if(rot_angle < 0 & rot_angle >= -90) {

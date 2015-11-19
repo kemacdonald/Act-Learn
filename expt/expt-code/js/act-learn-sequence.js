@@ -128,20 +128,22 @@ trim = function(item) {
 
 
 try { 
-    var filename = "KM_act_learn_sequence_ii";
-    var condCounts = "5,15;6,15;7,15;8,15";
+    var filename = "KM_act_learn_sequence_finish_AA_ii_order2";
+    var condCounts = "14,9";
     var xmlHttp = null;
     xmlHttp = new XMLHttpRequest();
     xmlHttp.open( "GET", "https://langcog.stanford.edu/cgi-bin/KM/subject_equalizer_km/maker_getter_revised_km.php?conds=" + condCounts + "&filename=" + filename, false );
     xmlHttp.send( null );
     var cond = xmlHttp.responseText; // For actual experimental runs
 } catch (e) {
-    var cond = random(1,8); // if maker-getter fails, generate condition randomly
+    var cond = random(1,8); // if maker-getter fails, generate condition number randomly
 }
 
 var order, training_condition, flag = "true";
 
 cond = cond.toString();
+
+cond = "14";
 
 /* Set up experiment based on condition */
 
@@ -186,6 +188,47 @@ switch (cond) {
         order = "order2";
         category_type = "information-integration"
         break;
+     case "9":
+        training_condition = "active_active";
+        order = "order1";
+        category_type = "rule-based"
+        break;
+    case "10":
+        training_condition = "active_active";
+        order = "order2";
+        category_type = "rule-based"
+        break;
+    case "11":
+        training_condition = "receptive_receptive";
+        order = "order1";
+        category_type = "rule-based"
+        break
+    case "12":
+        training_condition = "receptive_receptive";
+        order = "order2";
+        category_type = "rule-based"
+        break;
+    case "13":
+        training_condition = "active_active";
+        order = "order1";
+        category_type = "information-integration"
+        break;
+    case "14":
+        training_condition = "active_active";
+        order = "order2";
+        category_type = "information-integration"
+        break;
+    case "15":
+        training_condition = "receptive_receptive";
+        order = "order1";
+        category_type = "information-integration"
+        break;
+    case "16":
+        training_condition = "receptive_receptive";
+        order = "order2";
+        category_type = "information-integration"
+        break;
+
 }
 
 
@@ -212,7 +255,6 @@ var num_training_trials_block = 16;
 var num_training_trials_experiment = num_training_trials_block * num_blocks
 var num_test_trials_block = 32;
 var num_trials_block = num_training_trials_block + num_test_trials_block;
-var flag = "true";
 
 /* parameter values for training trials: 
 * generated from gaussians (done in R) 
@@ -299,7 +341,9 @@ var order1_antennas = [], order2_antennas = [], test_antennas = [], antenna_a, a
 // checking which category type: rule-based or information-integration
 var antennas_block_passive = [];
 
-for(j = 0; j < num_training_trials_block / 2; j++) {
+for(i = 0; i < num_blocks; i++) {
+
+    for(j = 0; j < num_training_trials_block / 2; j++) {
 
         if(category_type == "rule-based") {
 
@@ -321,6 +365,7 @@ for(j = 0; j < num_training_trials_block / 2; j++) {
               training_block: "receptive"
             };
 
+
         } else { // information integration condition
 
             antenna_a = {
@@ -329,7 +374,7 @@ for(j = 0; j < num_training_trials_block / 2; j++) {
                 radius_param: ii_catA1radii_param.shift(),
                 angle_param: ii_catA1orientations_param.shift(),
                 category: "A",
-               	training_block: "receptive"
+                training_block: "receptive"
               };  
 
             antenna_b = {
@@ -345,52 +390,67 @@ for(j = 0; j < num_training_trials_block / 2; j++) {
         antennas_block_passive.push(antenna_b);
     }
 
-// randomize order of training trials within block
-antennas_block_passive = shuffle(antennas_block_passive); 
+    // randomize order of training trials within block
+    antennas_block_passive = shuffle(antennas_block_passive); 
+
+}
+
 
 // create block of active training trials
 var antennas_block_active = [];
 
-for(j = 0; j < num_training_trials_block / 2; j++) {
+for(i = 0; i < num_blocks; i ++) {
 
-  var radius_a = random(radius_lower_limit, radius_upper_limit);
-  var angle_a = random(rotation_lower_limit, rotation_upper_limit);
+    for(j = 0; j < num_training_trials_block / 2; j++) {
 
-  antenna_a = {
-      radius: radius_a,
-      angle: angle_a,
-      radius_param: convertStimParam(radius_a, scale_factor_radius, radius_lower_limit, min_param_scale),
-      angle_param: convertStimParam(angle_a, scale_factor_orientation, rotation_lower_limit, min_param_scale),
-      category: "NA",
-      training_block: "active"
-  };
+      var radius_a = random(radius_lower_limit, radius_upper_limit);
+      var angle_a = random(rotation_lower_limit, rotation_upper_limit);
 
-  var radius_b = random(radius_lower_limit, radius_upper_limit);
-  var angle_b = random(rotation_lower_limit, rotation_upper_limit);
+      antenna_a = {
+          radius: radius_a,
+          angle: angle_a,
+          radius_param: convertStimParam(radius_a, scale_factor_radius, radius_lower_limit, min_param_scale),
+          angle_param: convertStimParam(angle_a, scale_factor_orientation, rotation_lower_limit, min_param_scale),
+          category: "NA",
+          training_block: "active"
+      };
 
-  antenna_b = {
-      radius: radius_b,
-      angle: angle_b,
-      radius_param: convertStimParam(radius_b, scale_factor_radius, radius_lower_limit, min_param_scale),
-      angle_param: convertStimParam(angle_b, scale_factor_orientation, rotation_lower_limit, min_param_scale),
-      category: "NA",
-      training_block: "active"
-  };
 
-  antennas_block_active.push(antenna_a);
-	antennas_block_active.push(antenna_b);
+      var radius_b = random(radius_lower_limit, radius_upper_limit);
+      var angle_b = random(rotation_lower_limit, rotation_upper_limit);
+
+      antenna_b = {
+          radius: radius_b,
+          angle: angle_b,
+          radius_param: convertStimParam(radius_b, scale_factor_radius, radius_lower_limit, min_param_scale),
+          angle_param: convertStimParam(angle_b, scale_factor_orientation, rotation_lower_limit, min_param_scale),
+          category: "NA",
+          training_block: "active"
+      };
+
+      antennas_block_active.push(antenna_a);
+      antennas_block_active.push(antenna_b);
+
+    }
+
+antennas_block_active = shuffle(antennas_block_active);
 
 }
 
-antennas_block_active = shuffle(antennas_block_active);
 
 // create order of training blocks based on condition assignment
 if(training_condition == "active_receptive") {
 	order1_antennas.push(antennas_block_active);
 	order1_antennas.push(antennas_block_passive);
-} else {
+} else if (training_condition == "receptive_active") {
 	order1_antennas.push(antennas_block_passive);
 	order1_antennas.push(antennas_block_active);
+} else if (training_condition == "receptive_receptive") {
+  order1_antennas.push(antennas_block_passive);
+  order1_antennas.push(antennas_block_passive);
+} else {
+  order1_antennas.push(antennas_block_active);
+  order1_antennas.push(antennas_block_active);
 }
 
 
@@ -408,10 +468,12 @@ var ii_catB2orientations_stim = shuffle(convertParamStim(ii_catB2orientations_pa
 
 // create active training stimuli for Order 2 
 var antennas_block_active_order2 = [];
-    
-for(j = 0; j < num_training_trials_block / 2; j++) {
 
-		var radius_a = random(radius_lower_limit, radius_upper_limit);
+for(i = 0; i < num_blocks; i++) {
+
+    for(j = 0; j < num_training_trials_block / 2; j++) {
+
+    var radius_a = random(radius_lower_limit, radius_upper_limit);
     var angle_a = random(rotation_lower_limit, rotation_upper_limit);
 
           antenna_a = {
@@ -435,20 +497,26 @@ for(j = 0; j < num_training_trials_block / 2; j++) {
               training_block: "active"
           };
 
-  	antennas_block_active_order2.push(antenna_a);
-	  antennas_block_active_order2.push(antenna_b);
+    antennas_block_active_order2.push(antenna_a);
+    antennas_block_active_order2.push(antenna_b);
 
 }
 
 antennas_block_active_order2 = shuffle(antennas_block_active_order2);
 
 
+}
+    
+
+
 // create passive training for order 2
 var antennas_block_passive_order2 = [];
 
-for(j = 0; j < num_training_trials_block / 2; j++) {
+for(i = 0; i < num_blocks; i++) {
 
-		if(category_type == "rule-based") {
+  for(j = 0; j < num_training_trials_block / 2; j++) {
+
+    if(category_type == "rule-based") {
 
             antenna_a = {
                 radius: rb_catA2radii_stim.shift(),
@@ -494,14 +562,25 @@ for(j = 0; j < num_training_trials_block / 2; j++) {
 // randomize order of training trials within block
 antennas_block_passive_order2 = shuffle(antennas_block_passive_order2);  
 
+}
+
+
+
 // create order of training blocks based on condition assignment
 if(training_condition == "active_receptive") {
-	order2_antennas.push(antennas_block_active_order2);
-	order2_antennas.push(antennas_block_passive_order2);
+  order2_antennas.push(antennas_block_active_order2);
+  order2_antennas.push(antennas_block_passive_order2);
+} else if (training_condition == "receptive_active") {
+  order2_antennas.push(antennas_block_passive_order2);
+  order2_antennas.push(antennas_block_active_order2);
+} else if (training_condition == "receptive_receptive") {
+  order2_antennas.push(antennas_block_passive_order2);
+  order2_antennas.push(antennas_block_passive_order2);
 } else {
-	order2_antennas.push(antennas_block_passive_order2);
-	order2_antennas.push(antennas_block_active_order2);
+  order2_antennas.push(antennas_block_active_order2);
+  order2_antennas.push(antennas_block_active_order2);
 }
+
 
 // create array of test antennas
 var num_test_trials = 32 * num_blocks, test_antenna_stim, test_antennas_stim = [];
@@ -796,7 +875,7 @@ var experiment = {
   },
 
   instructionsSlide: function() {
-      if(training_condition == "active_receptive") {
+      if(training_condition == "active_receptive" || training_condition == "active_active") {
         showSlide("active_instructions");
       } else {
         showSlide("receptive_instructions_slide");
@@ -815,10 +894,18 @@ var experiment = {
     } else if (training_condition == "receptive_active" && trial_number_experiment != 96) {
         $("#instructions_text_active_summary").attr("style", "display: block");
         $("#instructions_text_receptive_summary").attr("style", "display: none");
+    } else if (training_condition == "receptive_receptive" && trial_number_experiment != 96)  {
+    	 $("#instructions_text_receptive_summary").attr("style", "display: block");
+       $("#instructions_text_active_summary").attr("style", "display: none");
+    } else if (training_condition == "active_active" && trial_number_experiment != 96) {
+        $("#instructions_text_active_summary").attr("style", "display: block");
+        $("#instructions_text_receptive_summary").attr("style", "display: none");
     } else {
-    	$("#instructions_text_receptive_summary").attr("style", "display: none");
-    	$("#instructions_text_active_summary").attr("style", "display: none");
+      $("#instructions_text_receptive_summary").attr("style", "display: none");
+      $("#instructions_text_active_summary").attr("style", "display: none");
     }
+
+
     showSlide("summarySlide");
   },
 
@@ -827,6 +914,7 @@ var experiment = {
 
     // get trial information from trial array
     trial = trials.shift();
+ 
 
   		// remove category label text from previous trial
   		$("#category").text("");
@@ -875,10 +963,7 @@ var experiment = {
             $(document).unbind("keyup")
             return showSlide("qanda");
         }
-        //console.log("Trial info is: ")
-        //console.log(trial);
-        //console.log("---------------------")
-
+       
         // if between blocks we need to display cumulative accuracy during the block they just completed, 
         // as well as their accuracy during the preceding test block
 
@@ -1209,16 +1294,21 @@ var experiment = {
                        trial.angle == Math.round(line.matrix.split().rotate)) {
                         alert("Please adjust the antenna to learn the station")
                     } else {
-                      $("#channel_label").css("border", "3px solid green");
-                      $(document).unbind("keyup") // remove other event listeners
-                      circle.undrag() // unbind the ability to modify the antenna
-                      var radius_response = Math.round(circle.attr("r"));
-                      var radius_param = convertStimParam(radius_response, scale_factor_radius, radius_lower_limit, min_param_scale);
+                        flag = "true";
+                        $("#channel_label").css("border", "3px solid green");
+                        $(document).unbind("keyup") // remove other event listeners
+
+                        // KM note: for some reason, unbinding the drag event listener creates a bug. if the user is still pressing the mouse button when they press C to submit their angle. On 11/10/15, I commented this out, and it seemed to fix that bug.
+                       // circle.undrag() // unbind the ability to modify the antenna, 
+
+
+                        var radius_response = Math.round(circle.attr("r"));
+                        var radius_param = convertStimParam(radius_response, scale_factor_radius, radius_lower_limit, min_param_scale);
                       
-                      //  transform negative angle values
-                      var orientation_response = Math.round(line.matrix.split().rotate);
-                      if(orientation_response < 0 & orientation_response >= -90) {
-              				orientation_response = orientation_response + 360;
+                        //  transform negative angle values
+                        var orientation_response = Math.round(line.matrix.split().rotate);
+                        if(orientation_response < 0 & orientation_response >= -90) {
+                				orientation_response = orientation_response + 360;
             		  }
 
                       var orientation_param = convertStimParam(orientation_response, scale_factor_orientation, rotation_lower_limit, min_param_scale);
@@ -1275,15 +1365,16 @@ var experiment = {
                       }
                     }
                       
-                      //console.log("transformed radius: " + (600 - radius_param));
-                      //console.log("category is: " + category_response);
+                      
 
                       setTimeout(function(){
                         logDataTraining(category_response, radius_response, orientation_response, radius_param, orientation_param);
                       }, 1000)
                       
                     }
+                    break;
                 default:
+                break;
               }
           });
     } else if(trial.trial_type == "training" & // this should be "training"
