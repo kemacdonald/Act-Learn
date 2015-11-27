@@ -91,7 +91,11 @@
                   <p id="instructions_text">
                     Your goal is to learn the difference between the 
                     two types of antennas in order to predict which channel
-                    a new antenna will receive. The antennas are noisy and 
+                    a new antenna will receive. 
+
+                    <br><br>
+
+                    The antennas are noisy and 
                     can pick up the wrong channel on occasion, so you 
                     should learn what channel is most often received 
                     by a particular type of antenna.
@@ -106,7 +110,7 @@
           <h3>Game Instructions 2</h3>
               <p id="instructions_text_active">
 
-                    In this part of the game, you will be able to design and test your own antennas. 
+                    In this game, you will be able to design and test your own antennas. 
                     <br><br>
                     *To adjust the size, press and release the <b>Z key</b>, 
                     then click/drag the antenna <b>L/R</b>. <br> 
@@ -139,7 +143,7 @@
                 <h3>Game Instructions</h3>
 
                   <p id="instructions_text_receptive">
-                    In this part of the game, you will be see antennas one at a time, and told which channel they receive.
+                    In this game, you will be see antennas one at a time, and told which channel they receive.
 
                     <br><br>
 
@@ -163,6 +167,25 @@
                 <button type="button" onClick="this.blur(); experiment.next()">Continue</button>
               </center>
       </div>
+
+      <!-- Framing slide -->
+
+       <div class="slide" id="framing_instructions">
+          <h3> IMPORTANT </h3>
+
+          <p id="ii_framing">
+          The channel received by an antenna depends on <b> BOTH features, an antenna's SIZE AND ANGLE</b>.   
+          </p>
+
+          <p id="rb_framing">
+          The channel received by an antenna depends on <b>a SINGLE feature, either the antenna's SIZE OR ANGLE</b>.   
+          </p>
+
+           <center>
+                <button type="button" onClick="this.blur(); experiment.next()">Continue</button>
+          </center>
+
+       </div>
 
 <!--TEST SLIDE-->
       <div class="slide" id="stage">

@@ -615,6 +615,35 @@ var trials = [], trial_radius, trial_angle,
 trial_info, trial_type, trial_number = 0, 
 trial_category, test_trial, trial_quadrant;
 
+// add 2 active learning traning examples
+var numExamples = 2;
+
+for(i = 0; i < numExamples; i++) {
+  trial_type = "active_example"
+
+    antenna = {
+      radius: random(radius_lower_limit, radius_upper_limit),
+      angle: random(rotation_lower_limit, rotation_upper_limit),
+      category: "NA",
+    };
+
+     trial_info = {
+          trial_number_experiment: "example",
+          trial_number_block: i+1,
+          block: "example",
+          trial_type: trial_type,
+          antenna_category: antenna.category,
+          radius: antenna.radius,
+          radius_param: convertStimParam(antenna.radius, scale_factor_radius, radius_lower_limit, min_param_scale),
+          angle: antenna.angle,
+          angle_param: convertStimParam(antenna.angle, scale_factor_orientation, rotation_lower_limit, min_param_scale),
+          quadrant: "NA"
+     }
+
+    trials.push(trial_info);
+
+}
+
 for(i = 0; i < num_blocks; i++) {
 
     for(j = 0; j < num_trials_block; j++) {
@@ -793,9 +822,6 @@ var experiment = {
         comments : $("#comments").val(),
       };
 
-    //console.log(experiment.subj_data);
-    //console.log(experiment.data);
-
     // show finished slide
     showSlide("finished"); 
     // Submit to turk
@@ -925,7 +951,7 @@ var experiment = {
 
         // set up slide depending on trial type
         if (trial.trial_type == "training" &  // this should be training
-          trial.training_block == "active") {
+          trial.training_block == "active" || trial.trial_type == "active_example") {
                 $("#task_instructions").attr("style", "display: block");
                 $("#channel_label").attr("style", "display: block");
                 $("#channel_label").css("border", "3px solid white")
@@ -1203,15 +1229,30 @@ var experiment = {
                   if(trial.trial_number_experiment == 48 || trial.trial_number_experiment == 96 ||
                     trial.trial_number_experiment == 144 || trial.trial_number_experiment == 192 ||
                     trial.trial_number_experiment == 240 || trial.trial_number_experiment == 288) { 
+
                     setTimeout(function() {
-                    paper.clear();
-                    setTimeout(experiment.summarySlide(num_correct_in_block, trial.trial_number_experiment), 1);
-                  }, 500);
+                      paper.clear();
+                      setTimeout(experiment.summarySlide(num_correct_in_block, trial.trial_number_experiment), 1);
+                    }, 500);
+
+                  } else if (trial.trial_number_experiment == 2 && trial.trial_type == "active_example") {
+                      
+                      if (framing_condition == "rb") {
+                          $("#rb_framing").attr("style", "display: block"); 
+                          $("#ii_framing").attr("style", "display: none");    
+                      } else {
+                          $("#rb_framing").attr("style", "display: none"); 
+                          $("#ii_framing").attr("style", "display: block");
+                      }
+
+                      showSlide("framing_instructions");
+
                   } else {
+                    
                     setTimeout(function() {
-                    paper.clear();
-                    setTimeout(experiment.blank, 1);
-                  }, 500);
+                      paper.clear();
+                      setTimeout(experiment.blank, 1);
+                    }, 500);
 
                   }
         };
@@ -1219,7 +1260,7 @@ var experiment = {
 /* SET UP USER INTERACTIVITY */
 
     if(trial.trial_type == "training" & // this should be "training"
-       trial.training_block == "active") { 
+       trial.training_block == "active" || trial.trial_type == "active_example") { 
        /* Set up keypress event
         * While the z key is pressed user can scale antenna
         * After the x key is pressed user can rotate antenna 

@@ -17,9 +17,6 @@ This script analyzes data from two active/passive learning experiments.
 * Exact replication of Markant and Gureckis, 2014 JEP 
 * An extension testing the effectiveness of different sequences of active vs. passive training 
 
-
-## Libraries 
-
 ```{r libraries, warning=F, message=F, comment=F}
 source("helpers/useful.R")
 library(langcog)
@@ -27,8 +24,6 @@ library(dplyr)
 library(magrittr)
 library(directlabels)
 ```
-
-## Load data
 
 ```{r}
 df <- read.csv("../data/act-learn-all-data-tidy.csv", stringsAsFactors = F)
@@ -41,9 +36,8 @@ df_comments <- df %>%
     arrange(condition, category_type, order, understand)
 ```
 
-Rename conditions and reorder levels of the condition factor.
-
 ```{r}
+# Rename conditions and reorder levels of the condition factor.
 df %<>% mutate(condition = factor(condition),
                odb_scale = ifelse(odb_scale == "radius_scale", "radius", 
                                   ifelse(odb_scale == "orientation_scale", "orientation",
@@ -53,12 +47,8 @@ levels(df$condition) <- c("AA", "AR", "RA", "RR", "YY")
 df$condition <- factor(df$condition, levels = c("AA", "RR", "RA", "AR", "YY"))
 ```
 
-
-## Exclusionary criteria
-
-Remove participants who reported misunderstanding the task
-
 ```{r}
+# Remove participants who reported misunderstanding the task
 df %<>% filter(block == 1 | block == 2, condition != "YY")
 ```
 
@@ -120,9 +110,11 @@ qplot(x=condition, y=mean_accuracy, data=ms,
     xlab("Condition") +
     facet_grid(.~category_type) +
     theme(text = element_text(size=16)) +
-    guides(fill=F)
+    guides(fill=F) +
+    theme_bw()
 ```
 
+We see the overall advantage for active learning over passive learning across both category types. 
 
 ## Accuracy by block analysis
 
@@ -136,8 +128,6 @@ ms_block <- df %>%
               ci_high = ci.high(correct),
               ci_low = ci.low(correct))
 ```
-
-Plot.
 
 ```{r acc by block plot, echo=F}
 block_plot <- qplot(x=block, y=mean_accuracy, data=ms_block, color = condition,
@@ -153,15 +143,15 @@ block_plot <- qplot(x=block, y=mean_accuracy, data=ms_block, color = condition,
     ylab("Mean Accuracy") +
     xlab("Block") +
     guides(color = F) +
-    theme(text = element_text(size=16)) 
+    theme(text = element_text(size=16)) +
+    theme_bw()
 
 direct.label(block_plot, list(last.bumpup, hjust = -0.5))
 ```
 
-The block analysis suggests some effect of order on active learning. Receptive-first learners appear to be
-more accurate after their block of active learning (block 2) compared to Active-first (block 1). 
+The block analysis shows an effect of order on active learning. 
 
-But, the effect is not large enough to overcome the overall active advantage that shows up in block 1 for the Active-first learners.
+Receptive-Active learners are more accurate after their block of active learning (block 2) compared to Active-Receptive learners (block 1). 
 
 ## Accuracy by block and order 
 
@@ -299,7 +289,7 @@ ggplot(data = df_sampling,
 
 Plot individual participant sampling behavior
 
-```{r sampling subs, echo=F, fig.width=12, fig.height=8}
+```{r sampling subs, echo=F, fig.width=12, fig.height=8, eval = F}
 qplot(x=dim_of_interest, y=other_dim, data=df_sampling,
       color = condition) +
     facet_wrap(condition~subids) +
@@ -421,15 +411,7 @@ qplot(x=as.factor(block), y=mean_accuracy, data=ss_mean_acc_explore,
     scale_color_solarized()
 ```
 
-There is a different overall pattern of accuracy performance across blocks by condition. Active-first learners have smaller slope compared to Receptive-first learners. 
-
-There are a couple of participants doing weird things -- huge drop in accuracy in block 2, but it shows up in both conditions. 
-
-Maybe there are some other analyses to do at the individual participant level? 
-
-## Statistics 
-
-Accuracy on active learning block is trending towards a reliable difference. (Is marginally significant if you just look at Order 1, size condition).
+There is a different overall pattern of accuracy performance across blocks by condition. Receptive-first learners show larger growth compared to Active-first learners. 
 
 ## Models
 
@@ -437,7 +419,7 @@ Accuracy on active learning block is trending towards a reliable difference. (Is
 
 Does condition and block predict accuracy on test trials?
 
-```{r}
+```{r, echo = F, eval = F}
 df %<>% mutate(block_factor = factor(block))
 
 m1 <- glmer(correct ~ condition * block_factor * category_type + (1|subids), 
@@ -479,7 +461,7 @@ Receptive-first participants are better at sampling than active first participan
 
 effect code (choose contrasts based on how you want to interpret model output)
 
-```{r, eval=F}
+```{r, eval=T, echo = T}
 df %<>% mutate(category_type = factor(category_type),
                condition = factor(condition),
                block_factor = factor(block))
@@ -494,14 +476,14 @@ contrasts(df$block_factor) <- cbind("base=block1" = c(-1, 1))
 
 Model with effect coding. 
 
-```{r, eval = F}
+```{r, eval = T, echo = T}
 m3 <- glmer(correct ~ condition * category_type * block_factor + (1|subids), 
             data=filter(df, trial_type=="test"), 
             nAGQ = 0,
             control = glmerControl(optimizer = "bobyqa"),
             family=binomial)
 
-summary(m3)
+knitr::kable(summary(m3)$coefficients)
 ```
 
 Intercept is the mean of the means (or the grand mean) of all the groups. These data are unbalanced.
