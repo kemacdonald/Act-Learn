@@ -17,7 +17,7 @@ library(lubridate)
 Set working directory to where you stored raw JSON files.
 
 ```{r}
-setwd("../../ACT-LEARN-RAW-DATA/data_summary/sequence_1_extension/")
+setwd("../../ACT-LEARN-RAW-DATA/data_summary/prior_manipulation_extension/")
 ```
 
 # Read in all the JSON strings
@@ -61,6 +61,7 @@ exp_df <- data.frame(
     screen_width = assignments$answers$screen_width,
     screen_height = assignments$answers$screen_height,
     condition = assignments$answers$condition,
+    framing_condition = assignments$answers$framing_condition,
     order = assignments$answers$order,
     category_type = assignments$answers$category_type,
     browser = assignments$answers$browser
@@ -147,5 +148,5 @@ df_final <- df_final %>%
 ## Save output 
 
 ```{r comment=NA}
-write.csv(x = df_final, file = "../../data_processed/act-learn-sequence-all.csv", row.names=F)
+write.csv(x = df_final, file = "../../data_processed/act-learn-prior-manip.csv", row.names=F)
 ```

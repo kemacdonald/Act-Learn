@@ -126,23 +126,23 @@ trim = function(item) {
  * Returns a condition number 
  */
 
+var numConditions = 8
 
 try { 
-    var filename = "KM_act_learn_prior_manipulation_pilot";
-    var condCounts = "1,2;2,2;3,2;4,2";
+    var filename = "KM_act_learn_prior_manipulation_full_data_collection";
+    var condCounts = "1,2;2,2;3,2;4,2;5,2;6,2;7,2;8,2";
     var xmlHttp = null;
     xmlHttp = new XMLHttpRequest();
-    xmlHttp.open( "GET", "https://langcog.stanford.edu/cgi-bin/KM/subject_equalizer_km/maker_getter_revised_km.php?conds=" + condCounts + "&filename=" + filename, false );
+    xmlHttp.open( "GET", "https://langcog.stanford.edu/cgi-bin/KM/subject_equalizer_km/maker_getter_revised.php?conds=" + condCounts + "&filename=" + filename, false );
     xmlHttp.send( null );
     var cond = xmlHttp.responseText; // For actual experimental runs
 } catch (e) {
-    var cond = random(1,4); // if maker-getter fails, generate condition number randomly
+    var cond = random(1,numConditions); // if maker-getter fails, generate condition number randomly
 }
 
 var order, training_condition, flag = "true";
 
 cond = cond.toString();
-
 
 /* Set up experiment based on condition */
 
@@ -162,17 +162,45 @@ switch (cond) {
         category_type = "rule-based"
         break;
     case "3":
+        experimental_condition = "match-rb-rb";
+        training_condition = "active_active";
+        framing_condition = "rule-based";
+        order = "order2";
+        category_type = "rule-based"
+        break;
+    case "4":
+        experimental_condition = "mismatch-ii-rb";
+        training_condition = "active_active";
+        framing_condition = "information-integration";
+        order = "order2";
+        category_type = "rule-based"
+        break;
+    case "5":
         experimental_condition = "match-ii-ii";
         training_condition = "active_active";
         framing_condition = "information-integration";
         order = "order1";
         category_type = "information-integration"
         break;
-    case "4":
+    case "6":
         experimental_condition = "mismatch-rb-ii";
         training_condition = "active_active";
         framing_condition = "rule-based";
         order = "order1";
+        category_type = "information-integration"
+        break
+    case "7":
+        experimental_condition = "match-ii-ii";
+        training_condition = "active_active";
+        framing_condition = "information-integration";
+        order = "order2";
+        category_type = "information-integration"
+        break;
+    case "8":
+        experimental_condition = "mismatch-rb-ii";
+        training_condition = "active_active";
+        framing_condition = "rule-based";
+        order = "order2";
         category_type = "information-integration"
         break
 }
@@ -378,22 +406,9 @@ antennas_block_active = shuffle(antennas_block_active);
 
 }
 
-
-// create order of training blocks based on condition assignment
-if(training_condition == "active_receptive") {
-	order1_antennas.push(antennas_block_active);
-	order1_antennas.push(antennas_block_passive);
-} else if (training_condition == "receptive_active") {
-	order1_antennas.push(antennas_block_passive);
-	order1_antennas.push(antennas_block_active);
-} else if (training_condition == "receptive_receptive") {
-  order1_antennas.push(antennas_block_passive);
-  order1_antennas.push(antennas_block_passive);
-} else {
-  order1_antennas.push(antennas_block_active);
-  order1_antennas.push(antennas_block_active);
-}
-
+// create order of training blocks: in this experiment, we just have two blocks of active learning
+order1_antennas.push(antennas_block_active);
+order1_antennas.push(antennas_block_active);
 
 // rule based order 2
 var rb_catA2radii_stim = shuffle(convertParamStim(rb_catA2radii_param, scale_factor_radius, radius_lower_limit));
@@ -508,19 +523,8 @@ antennas_block_passive_order2 = shuffle(antennas_block_passive_order2);
 
 
 // create order of training blocks based on condition assignment
-if(training_condition == "active_receptive") {
-  order2_antennas.push(antennas_block_active_order2);
-  order2_antennas.push(antennas_block_passive_order2);
-} else if (training_condition == "receptive_active") {
-  order2_antennas.push(antennas_block_passive_order2);
-  order2_antennas.push(antennas_block_active_order2);
-} else if (training_condition == "receptive_receptive") {
-  order2_antennas.push(antennas_block_passive_order2);
-  order2_antennas.push(antennas_block_passive_order2);
-} else {
-  order2_antennas.push(antennas_block_active_order2);
-  order2_antennas.push(antennas_block_active_order2);
-}
+order2_antennas.push(antennas_block_active_order2);
+order2_antennas.push(antennas_block_active_order2);
 
 
 // create array of test antennas
@@ -627,8 +631,10 @@ for(i = 0; i < numExamples; i++) {
       category: "NA",
     };
 
+    trial_number++; 
+
      trial_info = {
-          trial_number_experiment: "example",
+          trial_number_experiment: trial_number,
           trial_number_block: i+1,
           block: "example",
           trial_type: trial_type,
@@ -760,16 +766,7 @@ $("#start_button").click(function() {
           showSlide("instructions");
           alert("Warning this HIT will only work in Google Chrome. Please switch to if you would like to accept this HIT. Thanks!")
     } else {
-      // otherwise, we move on in the experiment and
-      // decrement maker-getter if this is a turker 
-      if (turk.workerId.length > 0) {
-          var xmlHttp = null;
-          xmlHttp = new XMLHttpRequest()
-          xmlHttp.open("GET", "https://langcog.stanford.edu/cgi-bin/KM/subject_equalizer_km/decrementer.php?filename=" + filename + "&to_decrement=" + cond, false);
-          xmlHttp.send(null)
-
-      }
-
+      
       // check which framing condition we are in and show the corresponding task framing
 
       if (framing_condition == "rule-based") {
@@ -811,6 +808,16 @@ var experiment = {
 
   /*The function that gets called when the sequence is finished. */
   end: function() {
+
+    // decrement maker-getter if this is a turker 
+    if (turk.workerId.length > 0) {
+        var xmlHttp = null;
+        xmlHttp = new XMLHttpRequest()
+        xmlHttp.open("GET", "https://langcog.stanford.edu/cgi-bin/KM/subject_equalizer_km/decrementer.php?filename=" + filename + "&to_decrement=" + cond, false);
+        xmlHttp.send(null)
+
+    }
+
     // store values from q and a 
     experiment.subj_data = {
         language : $("#language").val(),
@@ -1165,11 +1172,30 @@ var experiment = {
 
                   experiment.data.push(data);
 
-                  // move on to the next trial
-                  setTimeout(function() {
-                    paper.clear();
-                    setTimeout(experiment.blank,1);
-                  }, 500);
+                  if (trial.trial_number_experiment == 2 && trial.trial_type == "active_example") {
+                      
+                      if (framing_condition == "rule-based") {
+                          $("#rb_framing").attr("style", "display: block"); 
+                          $("#ii_framing").attr("style", "display: none");    
+                      } else {
+                          $("#rb_framing").attr("style", "display: none"); 
+                          $("#ii_framing").attr("style", "display: block");
+                      }
+
+                      paper.clear();
+
+                      showSlide("framing_instructions");
+
+                  } else {
+
+                    // move on to the next trial
+                    setTimeout(function() {
+                      paper.clear();
+                      setTimeout(experiment.blank,1);
+                    }, 500);
+
+                  }
+                  
         },
 
 
@@ -1210,9 +1236,7 @@ var experiment = {
                   //console.log("---------------------")
 
                   //reset correct counter on the first trial of the test block
-                  if(trial.trial_number_experiment == 65 || trial.trial_number_experiment == 113 ||
-                    trial.trial_number_experiment == 161 || trial.trial_number_experiment == 209 ||
-                    trial.trial_number_experiment == 257) {
+                  if(trial.trial_number_experiment == 67 || trial.trial_number_experiment == 115) {
                     num_correct_in_block = 0;
                   }
                   // track number of correct in the block 
@@ -1226,26 +1250,12 @@ var experiment = {
                   experiment.data.push(data);
 
                   // move on to the next trial, show summary slide if on the last trial of test block
-                  if(trial.trial_number_experiment == 48 || trial.trial_number_experiment == 96 ||
-                    trial.trial_number_experiment == 144 || trial.trial_number_experiment == 192 ||
-                    trial.trial_number_experiment == 240 || trial.trial_number_experiment == 288) { 
+                  if(trial.trial_number_experiment == 50 || trial.trial_number_experiment == 98) { 
 
                     setTimeout(function() {
                       paper.clear();
                       setTimeout(experiment.summarySlide(num_correct_in_block, trial.trial_number_experiment), 1);
                     }, 500);
-
-                  } else if (trial.trial_number_experiment == 2 && trial.trial_type == "active_example") {
-                      
-                      if (framing_condition == "rb") {
-                          $("#rb_framing").attr("style", "display: block"); 
-                          $("#ii_framing").attr("style", "display: none");    
-                      } else {
-                          $("#rb_framing").attr("style", "display: none"); 
-                          $("#ii_framing").attr("style", "display: block");
-                      }
-
-                      showSlide("framing_instructions");
 
                   } else {
                     
