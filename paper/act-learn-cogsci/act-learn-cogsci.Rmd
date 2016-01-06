@@ -1,0 +1,127 @@
+---
+title: "Understanding when active learning is most effectivne"
+bibliography: library.bib
+csl: apa6.csl
+document-params: "10pt, letterpaper"
+
+author-information: > 
+    \author{{\large \bf Kyle MacDonald} \\ \texttt{kyle.macdonald@university.edu} \\ Department of Psychology \\ Stanford University
+    \And {\large \bf Michael C. Frank} \\ \texttt{mcfrank@university.edu} \\ Department of Psychology \\ Stanford University}
+
+abstract: 
+    "Active learning contexts can speed knowledge acquisition by allowing people to select highly informative examples based on their prior experience. But real-world learning often involves both active and passive training, an interaction that we know little about. Moreover, work in machine learning shows that active learning systems can perform worse than random sampling when starting with the wrong initial hypothesis. In two large-scale experiments with adults, we test the effect of order of active/passive training (Experiment 1) and the quality of the learner's initial hypothesis (Experiment 2) on the effectiveness of active learning in a category learning task. Across all experiments, active training resulted in better category learning compared to passive learning. Classification accuracy was better when people received passive training before active training. Finally, learning was hindered when there was mismatch between the learner's prior hypotheses and the target category structure. The overall pattern of results did not change when learning a more or less complex category structure. Our data provide additional support that active learning provides an advantage over passive learning. But our results extend these findings to show that active learning is more effective when the learner already has some experience with the task and when they were considering the correct initial hypothesis." 
+    
+keywords:
+    "active learning, hypothesis testing, cognitive development, replication"
+    
+output: cogsci2016::cogsci_paper
+---
+
+```{r global_options, include=FALSE}
+rm(list=ls())
+knitr::opts_chunk$set(fig.width=3, fig.height=3, fig.crop = F, fig.pos = "tb", fig.path='figs/',
+                      echo=F, warning=F, cache=F, message=F, sanitize = T)
+```
+
+```{r, libraries}
+library(png)
+library(grid)
+library(ggplot2)
+library(xtable)
+```
+
+# Introduction
+
+*What is active learning?
+
+*Why is active learning helpful? 
+
+*Brief literature review
+    * Human active
+    * Machine active learning
+    * When is active learning most effective
+
+*Current work
+
+Questions for Mike: 
+*Do we present the replication as a separate study? Do we emphasize the replication?
+*Framing --> interaction between active/passive learning? when is active learning effective? 
+
+# Experiment 1
+
+## Methods
+
+
+### Participants
+We posted a set of Human Intelligence Tasks (HITs) to Amazon Mechanical Turk. Only participants with US IP addresses and a task approval rate above 85% were allowed to participate, and each HIT paid one dollar. TODO HITs were posted for each of the TODO between-subjects conditions. Data were excluded if participants completed the task more than once or if they reported that they did not understand the task at the end of the experiment (TODO HITs). The final sample consisted of TODO participants. 
+
+### Stimuli
+
+```{r stimuli, fig.pos = "tb", fig.width=3.5, fig.height=2, fig.align='center', fig.cap = "Screenshots of training and test trials used in all experiments. In the Active training condition, participants could interact with the antenna by adjusting it's size and/or angle. In the Passive training condition, participants saw an antenna and were told which channel it received. Test trials were identical across all conditions."}
+
+grid::grid.raster(png::readPNG("figs/stimuli.png"))
+```
+
+Figure 1 shows screenshots of the stimuli used in all experiments. Visual stimuli were black "antennas" on a white background. Each antenna could vary along two continuous dimensions: radius size or central angle. 
+
+All experiments can be viewed and downloaded at the project page: https://kemacdonald.github.io/act-learn/.
+
+### Design and procedure
+
+## Results and Discussion
+
+# Experiment 2
+
+## Methods
+
+### Participants
+Participant recruitment and inclusionary/exclusionary criteria were identical to those of Experiment 1 (excluded TODO HITs). TODO HITs were posted for each condition (TODO) for total of TODO paid HITs.
+
+### Design and procedure
+
+## Results and Discussion
+
+# Experiment 3
+
+## Methods
+
+### Participants
+
+### Design and procedure
+
+## Results and Discussion
+
+# General Discussion
+
+```{r plot, fig.pos = "H", fig.width=3, fig.height=3, fig.cap = "R plot" }
+x <- 0:100
+y <- 2 * (x + rnorm(length(x), sd = 3) + 3)
+ggplot2::ggplot(data = data.frame(x, y), 
+       aes(x = x, y = y)) + 
+  geom_point() + 
+  geom_smooth(method = "lm")
+```
+
+```{r xtable, results="asis"}
+n <- 100
+x <- rnorm(n)
+y <- 2*x + rnorm(n)
+out <- lm(y ~ x)
+tab <- xtable::xtable(summary(out)$coef, digits=c(0, 2, 2, 1, 2))
+print(tab, type="latex", comment = F, table.placement = "H")
+```
+
+# Acknowledgements
+
+We are grateful to Doug Markant and Todd Gureckis for sharing their data and the details of the original experiment. We thank the members of the Language and Cognition Lab for their helpful feedback on this project. This work was supported by a National Science Foundation Graduate Research Fellowship to KM.
+
+# References 
+
+```{r}
+# References will be generated automatically by Pandoc and included here.
+# The following code is some latex to format the bibliography. Do not remove it.
+```
+
+\setlength{\parindent}{-0.1in} 
+\setlength{\leftskip}{0.125in}
+\noindent

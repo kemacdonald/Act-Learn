@@ -39,12 +39,16 @@ df_comments <- df %>%
 ```{r}
 # Rename conditions and reorder levels of the condition factor.
 df %<>% mutate(condition = factor(condition),
+               category_type = factor(category_type),
                odb_scale = ifelse(odb_scale == "radius_scale", "radius", 
                                   ifelse(odb_scale == "orientation_scale", "orientation",
                                          odb_scale)))
 
 levels(df$condition) <- c("AA", "AR", "RA", "RR", "YY")
-df$condition <- factor(df$condition, levels = c("AA", "RR", "RA", "AR", "YY"))
+df$condition <- factor(df$condition, levels = c("AA", "RA", "AR", "RR", "YY"))
+
+levels(df$category_type) <- c("Info-Integration", "Rule-Based")
+df$category_type <- factor(df$category_type, levels = c("Rule-Based", "Info-Integration")) 
 ```
 
 ```{r}
@@ -85,7 +89,9 @@ qplot(exp_length_min, data=ss_rt, facets=.~condition)
 ## Experiment 1: Sequence 
 
 ```{r}
-df_exp1 <- df %>% filter(block == 1 | block == 2, condition != "YY", framing_condition == "none")
+df_exp1 <- df %>% filter(block == 1 | block == 2, 
+                         condition != "YY", 
+                         framing_condition == "none")
 ```
 
 ### Accuracy analysis 
@@ -104,12 +110,14 @@ ms_exp1 <- df_exp1 %>%
 Plot.
 
 ```{r mean acc plot condition/order, echo=F, fig.width=14}
-qplot(x=condition, y=mean_accuracy, data=ms_exp1,
-      geom="bar", stat="identity", fill = condition, position = "dodge") + 
+ggplot(aes(x=condition, y=mean_accuracy), data=ms_exp1) + 
+    geom_bar(stat = "identity", aes(fill = condition)) + 
     geom_linerange(aes(ymin=mean_accuracy - ci_low, 
                        ymax=mean_accuracy + ci_high), 
-                   width = .05, size=0.6, position=position_dodge(width=0.9)) + 
-    coord_cartesian(ylim=c(0.55,0.95)) +
+                   size=0.6,
+                   position=position_dodge(width=0.9)) + 
+    facet_grid(.~category_type) +
+    coord_cartesian(ylim=c(0.6,0.9)) +
     scale_fill_solarized() +
     ylab("Mean Accuracy") +
     xlab("Condition") +
@@ -135,16 +143,17 @@ ms_block_exp1 <- df_exp1 %>%
 ```
 
 ```{r acc by block plot, echo=F}
-block_plot_exp1 <- qplot(x=block, y=mean_accuracy, data=ms_block_exp1, color = condition,
-      geom=c("blank"), stat="identity") +
-    geom_smooth(method = "lm", se=F) +
+block_plot_exp1 <- ggplot(aes(x=block, y=mean_accuracy), data=ms_block_exp1) +
     geom_pointrange(aes(ymin=mean_accuracy - ci_low, 
-                       ymax=mean_accuracy + ci_high), 
-                   width = .05, size=0.6) + 
+                        ymax=mean_accuracy + ci_high,
+                        color = condition), 
+                    size=0.6) +
+    geom_hline(yintercept = 0.5, linetype = "dashed") +
+    geom_smooth(aes(color = condition), method = "lm", se=F) +
+    facet_grid(.~category_type) +
     scale_x_discrete() +
-    scale_y_continuous(limits=c(0.55,0.9)) +
+    scale_y_continuous(limits=c(0.4,0.9)) +
     scale_color_solarized() +
-    facet_grid(.~category_type) + 
     ylab("Mean Accuracy") +
     xlab("Block") +
     guides(color = F) +
@@ -172,8 +181,8 @@ Order here refers to whether size or angle was the category dimension.
 Rename order labels, so they make sense
 
 ```{r}
-df_exp1 %<>% mutate(order_rule_based = ifelse(order == "order1" & category_type == "rule-based", "size",
-                                         ifelse(order == "order2" & category_type == "rule-based", "angle",
+df_exp1 %<>% mutate(order_rule_based = ifelse(order == "order1" & category_type == "Rule-Based", "Size",
+                                         ifelse(order == "order2" & category_type == "Rule-Based", "Angle",
                                                 NA)))
 ```
 
@@ -192,20 +201,20 @@ ms_block_order_exp1 <- df_exp1 %>%
 ### Rule-Based category structure
 
 ```{r acc by block and dim plot, echo=F}
-block_plot2_exp1 <- qplot(x=block_factor, y=mean_accuracy, 
-                     data = filter(ms_block_order_exp1, category_type == "rule-based"), 
-                     color = condition, group = condition,
-      geom=c("point", "line"), stat="identity", facets=.~order_rule_based) + 
-    geom_linerange(aes(ymin=mean_accuracy - ci_low, 
-                       ymax=mean_accuracy + ci_high), 
-                   width = .05, size=0.6) + 
+block_plot2_exp1 <- ggplot(aes(x=block_factor, y=mean_accuracy, color = condition, group = condition), 
+       data = filter(ms_block_order_exp1, category_type == "Rule-Based")) +
+    geom_point() +
+    geom_smooth(aes(color = condition), method = "lm", se=F) +
+    geom_hline(yintercept = 0.5, linetype = "dashed") +
+    geom_linerange(aes(ymin=mean_accuracy - ci_low, ymax=mean_accuracy + ci_high), size=0.6) + 
+    facet_grid(.~order_rule_based) +
     scale_color_solarized() +
-    scale_y_continuous(limits=c(0.45,1)) +
+    scale_y_continuous(limits=c(0.4,1)) +
     scale_x_discrete() +
     ylab("Mean Accuracy") +
     xlab("Block") +
     theme_bw() +
-    theme(text = element_text(size=18)) 
+    theme(text = element_text(size=16)) 
     
 
 direct.label(block_plot2_exp1, list(last.bumpup, hjust = -0.5))
@@ -218,15 +227,15 @@ Also, there seems to be some between subjects variation here -- could this expla
 ### Information Integration category structure 
 
 ```{r acc by block and dim plot II, echo=F}
-block_plot3_exp1 <- qplot(x=block_factor, y=mean_accuracy, 
-                     data = filter(ms_block_order_exp1, category_type == "information-integration"), 
-                     color = condition, group = condition,
-      geom=c("point", "line"), stat="identity", facets=.~order) + 
-    geom_linerange(aes(ymin=mean_accuracy - ci_low, 
-                       ymax=mean_accuracy + ci_high), 
-                   width = .05, size=0.6) + 
+block_plot3_exp1 <- ggplot(aes(x=block_factor, y=mean_accuracy, color = condition, group = condition),
+       data = filter(ms_block_order_exp1, category_type == "information-integration")) +
+    geom_point() +
+    geom_line() +
+    geom_hline(yintercept = 0.5, linetype = "dashed") +
+    geom_linerange(aes(ymin=mean_accuracy - ci_low, ymax=mean_accuracy + ci_high), size=0.6) + 
+    facet_grid(.~order) +
     scale_color_solarized() +
-    scale_y_continuous(limits=c(0.45,1)) +
+    scale_y_continuous(limits=c(0.4,1)) +
     scale_x_discrete() +
     ylab("Mean Accuracy") +
     xlab("Block") +
@@ -249,12 +258,12 @@ df_sampling_exp1 <- df_exp1 %>%
                   odb_scale, radius_response_param, orientation_response_param,
            trial_category, order, odb_param, category_type)
 
-df_sampling_exp1 %<>% mutate(trial_training_block = ifelse(condition == "AR" & block == 1, "active",
-                                                      ifelse(condition == "RA" & block == 2, "active",
-                                                             ifelse(condition == "AA", "active",
-                                                                    "receptive"))))
+df_sampling_exp1 %<>% mutate(trial_training_block = ifelse(condition == "AR" & block == 1, "Active",
+                                                      ifelse(condition == "RA" & block == 2, "Active",
+                                                             ifelse(condition == "AA", "Active",
+                                                                    "Receptive"))))
 
-df_sampling_exp1 %<>% filter(trial_training_block == "active")
+df_sampling_exp1 %<>% filter(trial_training_block == "Active")
 ```
 
 Rotate, so orientation and radius are on the same dimension.
@@ -264,24 +273,19 @@ Rotate, so orientation and radius are on the same dimension.
 
 ```{r rotate samples, echo=F}
 df_sampling_exp1 <- df_sampling_exp1 %>%
-    mutate(dim_of_interest = ifelse(category_type == "rule-based" & 
+    mutate(dim_of_interest = ifelse(category_type == "Rule-Based" & 
                                         odb_scale == "orientation", orientation_response_param,
-                                    ifelse(category_type == "rule-based" & 
+                                    ifelse(category_type == "Rule-Based" & 
                                                odb_scale == "radius", radius_response_param,
                                            radius_response_param)),
-           other_dim = ifelse(category_type == "rule-based" & 
+           other_dim = ifelse(category_type == "Rule-Based" & 
                                   odb_scale == "orientation", radius_response_param,
-                              ifelse(category_type == "rule-based" & 
+                              ifelse(category_type == "Rule-Based" & 
                                          odb_scale == "radius", orientation_response_param,
                               orientation_response_param)))
 ```
 
 Plot group level sampling behavior.
-
-```{r sampling plot, fig.width=8}
-qplot(x=dim_of_interest, y=other_dim, data = df_sampling_exp1,
-      facets=category_type~condition)
-```
 
 ```{r}
 df_sampling_exp1$dim_ref <- ifelse(df_sampling_exp1$dim_of_interest <= 300, 
@@ -301,9 +305,9 @@ Get distance from optimal decision boundary for each sample.
 
 ```{r}
 df_sampling_exp1 <- mutate(df_sampling_exp1, 
-                      samp_dist_odb = ifelse(odb_scale == "orientation" & category_type == "rule-based", 
+                      samp_dist_odb = ifelse(odb_scale == "orientation" & category_type == "Rule-Based", 
                                              abs(as.numeric(odb_param) - orientation_response_param),
-                                             ifelse(odb_scale == "radius" & category_type == "rule-based", 
+                                             ifelse(odb_scale == "radius" & category_type == "Rule-Based", 
                                                     abs(as.numeric(odb_param) - radius_response_param),
                                                     abs(orientation_response_param - radius_response_param))))
 ```
@@ -321,11 +325,10 @@ ms_sampling_exp1 <- df_sampling_exp1 %>%
 Plot.
 
 ```{r}
-qplot(x=condition, y=mean_samp_dist, data=ms_sampling_exp1,
-      geom="bar", stat="identity", fill = condition, position = "dodge") + 
-    geom_linerange(aes(ymin=mean_samp_dist - ci_low, 
-                       ymax=mean_samp_dist + ci_high), 
-                   width = .05, size=0.6, position=position_dodge(width=0.9)) + 
+ggplot(aes(x=condition, y=mean_samp_dist, fill = condition), data=ms_sampling_exp1) +
+    geom_bar(stat="identity") + 
+    geom_linerange(aes(ymin=mean_samp_dist - ci_low, ymax=mean_samp_dist + ci_high), 
+                   size=0.6, position=position_dodge(width=0.9)) + 
     scale_fill_solarized() +
     coord_cartesian(ylim=c(100, 275)) +
     ylab("Mean Sample Distance") +
@@ -343,7 +346,7 @@ Get the mean sample distance and accuracy for each participant.
 
 ```{r}
 ss_samp_dist_exp1 <- df_sampling_exp1 %>%
-    filter(trial_training_block == "active", block == 1 | block == 2) %>%
+    filter(trial_training_block == "Active", block == 1 | block == 2) %>%
     group_by(subids, condition, block, category_type) %>%
     summarise(mean_samp_dist = mean(samp_dist_odb),
               ci_high_msd = ci.high(samp_dist_odb),
@@ -374,16 +377,20 @@ ss_all_exp1 <- left_join(ss_all_exp1, ss_mean_acc_all_exp1,
 Plot
 
 ```{r}
-a_exp1 <- qplot(x=mean_samp_dist, y=mean_accuracy_active_block, data = filter(ss_all_exp1, block == 1)) +
+a_exp1 <- ggplot(aes(x=mean_samp_dist, y=mean_accuracy_active_block), 
+                 data = filter(ss_all_exp1, block == 1)) +
+    geom_point() +
     geom_smooth(method="lm") +
-    facet_grid(condition~category_type) +
+    facet_grid(.~category_type) +
     xlab("Mean Sample Distance") +
     ylab("Mean Accuracy") +
     theme(text = element_text(size=16))
 
-b_exp1 <- qplot(x=mean_samp_dist, y=mean_accuracy_active_block, data = filter(ss_all_exp1, block == 2)) +
+b_exp1 <- ggplot(aes(x=mean_samp_dist, y=mean_accuracy_active_block), 
+                 data = filter(ss_all_exp1, block == 2)) +
+    geom_point() +
     geom_smooth(method="lm") +
-    facet_grid(condition~category_type) +
+    facet_grid(.~category_type) +
     xlab("Mean Sample Distance") +
     ylab("Mean Accuracy") +
     theme(text = element_text(size=16))
@@ -418,7 +425,7 @@ qplot(x=as.factor(block), y=mean_accuracy, data=ss_mean_acc_explore_exp1,
 
 There is a different overall pattern of accuracy performance across blocks by condition. Receptive-first learners show larger growth compared to Active-first learners. 
 
-## Models
+## Experiment 1: Models
 
 ### Accuracy on the trial-level based on condition and block
 
@@ -502,14 +509,34 @@ Active better than passive. Information integration worse than rule-based.
 Here we directly manipulate the match/mismatch between task framing and category type (1D category X 2D category). This tests the importance of the learner's prior hypohtesis for the effectiveness of active learning. This experiment can also help us understand how a learner revises their active learning when the data doesn't match their hypothesis.
 
 ```{r}
-df_exp2 <- filter(df, framing_condition != "none")
+df_exp2 <- filter(df, framing_condition != "none") %>% 
+    mutate(condition = ifelse(category_type == framing_condition, "match", "mismatch"))
 ```
 
 Descriptives
 
-TODO: fix import scrip to track match/mismatch condition.
+```{r}
+df_exp2 %>% 
+    distinct(subids) %>% 
+    xtabs(formula = ~ condition + category_type + order) %>% 
+    as.data.frame() %>% 
+    rename(count = Freq)
+```
 
 ```{r}
-df_exp2 %>% group_by(framing_condition, category_typeorder) %>% 
-    summarise(n())
+ms_exp2 <- df_exp2 %>% 
+    filter(trial_type == "test") %>% 
+    group_by(condition, category_type) %>% 
+    summarise(mean_accuracy = mean(correct),
+              ci_high = ci.high(correct),
+              ci_low = ci.low(correct))
+```
+
+```{r}
+ms_block_exp2 <- df_exp2 %>% 
+    filter(trial_type == "test") %>% 
+    group_by(condition, category_type, block_factor) %>% 
+    summarise(mean_accuracy = mean(correct, na.rm=T),
+              ci_high = ci.high(correct),
+              ci_low = ci.low(correct))
 ```

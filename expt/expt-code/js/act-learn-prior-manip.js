@@ -129,11 +129,11 @@ trim = function(item) {
 var numConditions = 8
 
 try { 
-    var filename = "KM_act_learn_prior_manipulation_full_data_collection";
-    var condCounts = "1,2;2,2;3,2;4,2;5,2;6,2;7,2;8,2";
+    var filename = "KM_act_learn_prior_manipulation_full_data_collection_good_2";
+    var condCounts = "1,13;2,15;3,14;4,13;5,6;6,4;7,13;8,12";
     var xmlHttp = null;
     xmlHttp = new XMLHttpRequest();
-    xmlHttp.open( "GET", "https://langcog.stanford.edu/cgi-bin/KM/subject_equalizer_km/maker_getter_revised.php?conds=" + condCounts + "&filename=" + filename, false );
+    xmlHttp.open( "GET", "https://langcog.stanford.edu/cgi-bin/KM/subject_equalizer_km/maker_getter.php?conds=" + condCounts + "&filename=" + filename, false );
     xmlHttp.send( null );
     var cond = xmlHttp.responseText; // For actual experimental runs
 } catch (e) {

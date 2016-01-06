@@ -64,8 +64,15 @@ exp_df <- data.frame(
     framing_condition = assignments$answers$framing_condition,
     order = assignments$answers$order,
     category_type = assignments$answers$category_type,
-    browser = assignments$answers$browser
+    browser = assignments$answers$browser,
+    experimental_condition = assignments$answers$experimental_condition
 )
+```
+
+```{r}
+exp_df %>% 
+    group_by(experimental_condition, order) %>% 
+    summarise(n())
 ```
 
 ## Build subject information data frame.

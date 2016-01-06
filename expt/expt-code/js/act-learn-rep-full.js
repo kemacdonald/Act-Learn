@@ -18,7 +18,6 @@ try {
 
 var order, training_condition, flag = "true";
 
-var cond = "4";
 
 /* Set up experiment based on condition */
 
