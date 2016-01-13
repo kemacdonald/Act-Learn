@@ -1,5 +1,5 @@
 ---
-title: "Understanding when active learning is most effectivne"
+title: "Order effects in active and passive hypothesis testing"
 bibliography: library.bib
 csl: apa6.csl
 document-params: "10pt, letterpaper"
@@ -9,10 +9,10 @@ author-information: >
     \And {\large \bf Michael C. Frank} \\ \texttt{mcfrank@university.edu} \\ Department of Psychology \\ Stanford University}
 
 abstract: 
-    "Active learning contexts can speed knowledge acquisition by allowing people to select highly informative examples based on their prior experience. But real-world learning often involves both active and passive training, an interaction that we know little about. Moreover, work in machine learning shows that active learning systems can perform worse than random sampling when starting with the wrong initial hypothesis. In two large-scale experiments with adults, we test the effect of order of active/passive training (Experiment 1) and the quality of the learner's initial hypothesis (Experiment 2) on the effectiveness of active learning in a category learning task. Across all experiments, active training resulted in better category learning compared to passive learning. Classification accuracy was better when people received passive training before active training. Finally, learning was hindered when there was mismatch between the learner's prior hypotheses and the target category structure. The overall pattern of results did not change when learning a more or less complex category structure. Our data provide additional support that active learning provides an advantage over passive learning. But our results extend these findings to show that active learning is more effective when the learner already has some experience with the task and when they were considering the correct initial hypothesis." 
+    "Active learning can speed concept learning by allowing people to collect highly informative samples based on their current hypotheses. But real-world learning often involves both active and passive learning contexts, an interaction that we know little about. In three category learning experiments with adults, we explore the effectiveness of active learning in a well-understood category learning task. Experiments 1a and 1b are direct replications of the active learning advantage found in @markant2014better. Experiment 2 is an extension that tests how different sequences of active/passive training modulate the effectiveness of active learning. Experiment 3 is a conceptual replication of the order effect findings, using a novel paradigm where participants learn a higher dimensional concept. Across all experiments, active training lead to better learning of the target category boundary. Passive-then-active training was more effective compared to Active- then-passive in both Experiments 2 and 3. Our replication data provides additional support that active learning can provide an advantage over passive learning, and our extension data show that active learning can be more effective when the learner already has some passive experience with the learning task." 
     
 keywords:
-    "active learning, hypothesis testing, cognitive development, replication"
+    "active learning, hypothesis testing, category learning, replication, order effects"
     
 output: cogsci2016::cogsci_paper
 ---
@@ -20,59 +20,185 @@ output: cogsci2016::cogsci_paper
 ```{r global_options, include=FALSE}
 rm(list=ls())
 knitr::opts_chunk$set(fig.width=3, fig.height=3, fig.crop = F, fig.pos = "tb", fig.path='figs/',
-                      echo=F, warning=F, cache=F, message=F, sanitize = T)
+                      echo=F, warning=F, cache=T, message=F, sanitize = T)
 ```
 
 ```{r, libraries}
+source("../../analysis/helpers/useful.R")
+library(langcog)
+library(dplyr)
+library(magrittr)
+library(directlabels)
 library(png)
 library(grid)
 library(ggplot2)
 library(xtable)
 ```
 
+```{r, data}
+df <- read.csv("../../data/act-learn-all-data-tidy.csv", stringsAsFactors = F)
+```
+
+```{r, data cleaning}
+# Rename conditions and reorder levels of the condition factor.
+df %<>% mutate(condition_long = condition,
+               condition = factor(condition),
+               category_type_string = category_type,
+               framing_condition_string = framing_condition,
+               category_type = factor(category_type),
+               odb_scale = ifelse(odb_scale == "radius_scale", "radius", 
+                                  ifelse(odb_scale == "orientation_scale", "orientation",
+                                         odb_scale)))
+
+levels(df$condition) <- c("AA", "AR", "RA", "RR", "YY")
+df$condition <- factor(df$condition, levels = c("AA", "RA", "AR", "RR", "YY"))
+
+levels(df$category_type) <- c("Info-Integration", "Rule-Based")
+df$category_type <- factor(df$category_type, levels = c("Rule-Based", "Info-Integration")) 
+
+levels(df$framing_condition) <- c("Info-Integration", "None", "Rule-Based")
+```
+
 # Introduction
 
-*What is active learning?
+* What is active learning?
 
-*Why is active learning helpful? 
+* Why is active learning helpful? 
 
-*Brief literature review
     * Human active
     * Machine active learning
     * When is active learning most effective
 
-*Current work
+* Current work
 
-Questions for Mike: 
-*Do we present the replication as a separate study? Do we emphasize the replication?
-*Framing --> interaction between active/passive learning? when is active learning effective? 
+In their experiment, @markant2014better compared the effectiveness of active vs. passive training on the rate of participants’ category learning. They tested two different types of category structures: a Rule-Based (RB) category, which varied along one dimension, and an Information-Integration (II) category, which varied along two dimensions. In the active learning condition, learners were allowed to choose specific observations from the category to test their beliefs; whereas in passive learning condition, the learner had no control over what data they saw. They found that participants in the active condition learned the category structure faster and achieved a higher overall accuracy rate compared to participants in the passive learning condition, but this advantage only held for the less complex, RB category structure.
 
-# Experiment 1
+# Experiment 1a
+
+```{r, exp1a-replication}
+df_rep <- df %>% 
+    filter(experiment == "replication", 
+           condition %in% c("AA","RR"), 
+           category_type == "Rule-Based") 
+```
+
+Experiment 1a is a direct replication of the advantage for active learning over passive learning found in @markant2014better. We tested participants' category learning for the RB category structure after receiving either Active or Passive training. We used the same stimuli and followed the exact procedures as the original study (described below). All of the stimuli and the experiments can be viewed and downloaded at the project page for this paper: https://kemacdonald.github.io/Act-Learn/. 
 
 ## Methods
 
+### Power analysis
+We calculated Cohen’s d for the t-test comparing participants' overall accuracy rate in the Active and Passive training conditions (d = 0.47). Next, we performed a post hoc power analysis and found that the original study achieved a power of 0.43. Finally, we conducted an a priori power analysis for the replication in order to achieve 80%, 90%, and 95% power to detect the effect size in the original study. The results were: 80%, n = 84 (42 in each group); 90%, n = 158 (79 in each group), 95%, n = 238 (119 in each group).
 
 ### Participants
-We posted a set of Human Intelligence Tasks (HITs) to Amazon Mechanical Turk. Only participants with US IP addresses and a task approval rate above 85% were allowed to participate, and each HIT paid one dollar. TODO HITs were posted for each of the TODO between-subjects conditions. Data were excluded if participants completed the task more than once or if they reported that they did not understand the task at the end of the experiment (TODO HITs). The final sample consisted of TODO participants. 
+
+```{r}
+demographics_replication <- df_rep %>% 
+    distinct(subids) %>% 
+    xtabs(formula = ~ condition_long + category_type_string) %>% 
+    as.data.frame() %>% 
+    rename(count = Freq)
+
+dnu_exp1a <- df_rep %>% distinct(subids) %>% count(understand) %>% filter(understand == "No")
+
+n_active_rep_1a <- demographics_replication$count[1]
+n_passive_rep_1a <- demographics_replication$count[2]
+```
+
+We posted a set of Human Intelligence Tasks (HITs) to Amazon Mechanical Turk. Only participants with US IP addresses and a task approval rate above 85% were allowed to participate, and each HIT paid one dollar. `r n_passive_rep_1a + n_active_rep_1a` HITs were posted for each of the two between-subjects conditions. Data were excluded if participants completed the task more than once or if they reported that they did not understand the task at the end of the experiment (`r dnu_exp1a$n` HITs). The final sample consisted of `r (n_passive_rep_1a + n_active_rep_1a) - dnu_exp1a$n` participants. 
 
 ### Stimuli
 
-```{r stimuli, fig.pos = "tb", fig.width=3.5, fig.height=2, fig.align='center', fig.cap = "Screenshots of training and test trials used in all experiments. In the Active training condition, participants could interact with the antenna by adjusting it's size and/or angle. In the Passive training condition, participants saw an antenna and were told which channel it received. Test trials were identical across all conditions."}
+```{r stimuli, fig.env = "figure*", fig.pos = "h", fig.width=5, fig.height=5, fig.align='center', set.cap.width=T, num.cols.cap=2, fig.cap = "The left panel shows a screenshot of the stimuli used in all experiments. The right panel shows the true category distributions for the single dimension, Rule-Based category and the two dimensional, Information-Integration category."}
 
 grid::grid.raster(png::readPNG("figs/stimuli.png"))
 ```
 
-Figure 1 shows screenshots of the stimuli used in all experiments. Visual stimuli were black "antennas" on a white background. Each antenna could vary along two continuous dimensions: radius size or central angle. 
+Figure 1 shows a screenshot of the stimuli used in all experiments. Visual stimuli were black "antennas" on a white background. Each antenna could vary along two continuous dimensions -- radius size or central angle -- and was assigned a value between 1 and 600. These values were converted to pixel values for display on a computer screen. To ensure that participants could not complete a full rotation of the antenna, the rotation of the central angle was limited to 150 degrees. Finally, the minimum radius and angle values were randomized for each participant, such that each participant was assigned a unique optimal decision boundary.
 
-All experiments can be viewed and downloaded at the project page: https://kemacdonald.github.io/act-learn/.
+Radius and angle values for the 96 passive training trials were generated from two Gaussian distributions with identical mean and covariance parameters as @markant2014better (see Figure 1). For test trials, we created a uniform grid of 192 unique test items that covered the entire feature space. We randomly sampled 8 items from each quadrant to get 32 test trials for each block. We then randomized the order of the training and test trials within each block for each participant. 
 
 ### Design and procedure
 
+Participants saw a total of 288 trials (96 training trials and 192 test trials) across 6 blocks. Each block consisted of 16 training trials and 32 test trials. Before starting the task, participants were told that this was a game where they would see "loop antennas" for televisions and each antenna received one of two channels (CH1 or CH2), and their goal was to learn the difference between the two types of antennas. We introduced some uncertainty by telling participants that the antennas could pick up the wrong channel on occasion, and that they should learn what channel is most often received by a particular type of antenna.
+
+After the instructions, participants were randomly assigned to one the two between-subjects conditions (Active vs. Passive training). In the Active training condition, participants were able to design their own antennas to test. They modified the antenna by clicking and dragging the mouse from left to right. To change the size of the antenna, they first pressed the "Z" key. To change the angle, they first pressed the "X" key. When participants were finished with their design, they pressed the spacebar to see which channel (Ch1 or Ch2) the antenna received. The channel label appeared in a text box with a green border located above the antenna.
+
+In the Passive training condition, participants were shown antennas with size and angles generated from the underlying category distributions. After a two second delay they were told which channel the antenna received. To ensure that participants saw the channel, they had to click on the channel text in order to advance the experiment. When they clicked the channel text, a green box appeared around the text to indicate that their response had been recorded.
+
+After completing the training, participants in both conditions proceeded to the test trials. On each test trial participants saw an antenna and were asked, "Which channel does this antenna receive?" To indicate their response participants selected one of two buttons located above the antenna. 
+
 ## Results and Discussion
 
-# Experiment 2
+### Overall classification accuracy
+
+```{r}
+ms_rep <- df_rep %>%
+    filter(trial_type == "test") %>%
+    group_by(condition, category_type) %>%
+    summarise(mean_accuracy = mean(correct),
+              ci_high = ci.high(correct),
+              ci_low = ci.low(correct))
+
+ms_rep_block <- df_rep %>%
+    filter(trial_type == "test") %>%
+    group_by(condition, category_type, block) %>%
+    summarise(mean_accuracy = mean(correct, na.rm=T),
+              ci_high = ci.high(correct),
+              ci_low = ci.low(correct))
+```
+
+```{r exp1a_acc, fig.env = "figure*", fig.pos = "h", fig.width=5, fig.height=3, fig.align='center', set.cap.width=T, num.cols.cap=2, fig.cap = "The left panel shows overall accuracy performance for the Active and Passive training conditions. The right panel shows participants' accuracy across all six blocks in the experiment."}
+
+acc_plot_1a <- ggplot(aes(x=condition, y=mean_accuracy), data=ms_rep) + 
+    geom_bar(stat = "identity", aes(fill = condition)) + 
+    geom_linerange(aes(ymin=mean_accuracy - ci_low, 
+                       ymax=mean_accuracy + ci_high), 
+                   size=0.6,
+                   position=position_dodge(width=0.9)) + 
+    geom_hline(yintercept = 0.5, linetype = "dashed") +
+    facet_grid(.~category_type) +
+    coord_cartesian(ylim=c(0.4,1.0)) +
+    scale_fill_solarized() +
+    ylab("Mean Accuracy") +
+    xlab("Condition") +
+    facet_grid(.~category_type) +
+    theme(text = element_text(size=16)) +
+    guides(fill=F) +
+    theme_bw()
+
+block_plot_exp1 <- ggplot(aes(x=as.numeric(block), y=mean_accuracy, color = condition), 
+                          data=filter(ms_rep_block, category_type == "Rule-Based")) +
+    geom_pointrange(aes(ymin=mean_accuracy - ci_low, 
+                        ymax=mean_accuracy + ci_high,
+                        color = condition), 
+                    size=0.3) +
+    geom_hline(yintercept = 0.5, linetype = "dashed") +
+    geom_smooth(data = filter(ms_rep_block, category_type == "Rule-Based"),
+                method = "loess", se=F) +
+    facet_grid(.~category_type) +
+    scale_y_continuous(limits=c(0.4,1.0)) +
+    scale_x_continuous(limits=c(0.5,7), breaks = seq(1:6)) +
+    scale_color_solarized() +
+    ylab("Mean Accuracy") +
+    xlab("Block") +
+    guides(color = F) +
+    theme(text = element_text(size=16)) +
+    theme_bw()
+
+block_plot_exp1 <- direct.label(block_plot_exp1, list(last.points, hjust = -0.5))
+gridExtra::grid.arrange(acc_plot_1a, block_plot_exp1, ncol = 2, widths = c(2.5,3))
+```
+
+### Classification accuracy across blocks
+
+### Relationship between evidence selection and learning
+
+# Experiment 1b
 
 ## Methods
+
+### Stimuli
+Stimuli were identical to Experiment 1a.  
 
 ### Participants
 Participant recruitment and inclusionary/exclusionary criteria were identical to those of Experiment 1 (excluded TODO HITs). TODO HITs were posted for each condition (TODO) for total of TODO paid HITs.
@@ -81,26 +207,97 @@ Participant recruitment and inclusionary/exclusionary criteria were identical to
 
 ## Results and Discussion
 
-# Experiment 3
+# Experiment 2
 
+```{r, seq-data}
+df_sequence <- df %>% filter(block == 1 | block == 2, 
+                             condition %in% c("RA", "AR", "RR", "AA"))
+```
+
+```{r}
+df_sequence <- df_sequence %>% filter(understand != "No")
+```
 ## Methods
 
+### Stimuli
+Stimuli were identical to Experiment 1.  
+
 ### Participants
+Participant recruitment and inclusionary/exclusionary criteria were identical to those of Experiment 1 (excluded TODO HITs). TODO HITs were posted for each condition (TODO) for total of TODO paid HITs.
 
 ### Design and procedure
 
 ## Results and Discussion
 
-# General Discussion
+```{r}
+# overall acc
+ms_sequence <- df_sequence %>%
+    filter(trial_type == "test") %>%
+    group_by(condition, category_type) %>%
+    summarise(mean_accuracy = mean(correct),
+              ci_high = ci.high(correct),
+              ci_low = ci.low(correct))
 
-```{r plot, fig.pos = "H", fig.width=3, fig.height=3, fig.cap = "R plot" }
-x <- 0:100
-y <- 2 * (x + rnorm(length(x), sd = 3) + 3)
-ggplot2::ggplot(data = data.frame(x, y), 
-       aes(x = x, y = y)) + 
-  geom_point() + 
-  geom_smooth(method = "lm")
+## acc by block
+ms_block_sequence <- df_sequence %>%
+    filter(trial_type == "test") %>%
+    group_by(condition, block, category_type) %>%
+    summarise(mean_accuracy = mean(correct),
+              ci_high = ci.high(correct),
+              ci_low = ci.low(correct))
 ```
+
+```{r, exp2_acc_plot}
+acc_plot_exp2 <- ggplot(aes(x=condition, y=mean_accuracy), data=ms_sequence) + 
+    geom_bar(stat = "identity", aes(fill = condition)) + 
+    geom_linerange(aes(ymin=mean_accuracy - ci_low, 
+                       ymax=mean_accuracy + ci_high), 
+                   size=0.6,
+                   position=position_dodge(width=0.9)) + 
+    facet_grid(category_type~.) +
+    coord_cartesian(ylim=c(0.5,0.9)) +
+    scale_fill_solarized() +
+    ylab("Mean Accuracy") +
+    xlab("Condition") +
+    facet_grid(category_type~.) +
+    theme(text = element_text(size=16)) +
+    guides(fill=F) +
+    theme_bw()
+
+block_plot_exp2 <- ggplot(aes(x=block, y=mean_accuracy), data=ms_block_sequence) +
+    geom_pointrange(aes(ymin=mean_accuracy - ci_low, 
+                        ymax=mean_accuracy + ci_high,
+                        color = condition), 
+                    size=0.6) +
+    #geom_hline(yintercept = 0.5, linetype = "dashed") +
+    geom_smooth(aes(color = condition), method = "lm", se=F) +
+    facet_grid(category_type~.) +
+    scale_x_discrete() +
+    scale_y_continuous(limits=c(0.5,0.9)) +
+    scale_color_solarized() +
+    ylab("Mean Accuracy") +
+    xlab("Block") +
+    guides(color = F) +
+    theme(text = element_text(size=16)) +
+    theme_bw()
+
+block_plot_exp2 <- direct.label(block_plot_exp2, list(last.bumpup, hjust = -0.5))
+gridExtra::grid.arrange(acc_plot_exp2, block_plot_exp2, ncol=2, widths = c(2.5,3))
+```
+
+# Experiment 3
+
+## Methods
+
+### Stimuli
+Stimuli were identical to Experiments 1 and 2. 
+
+### Participants
+Participant recruitment, and inclusionary/exclusionary criteria were identical to those of Experiment 1 and 2 (excluded TODO HITs). 40 HITs were posted for each condition (TODO) for total of TODO paid HITs.  
+
+### Design and procedure
+
+## Results and Discussion
 
 ```{r xtable, results="asis"}
 n <- 100
@@ -111,9 +308,30 @@ tab <- xtable::xtable(summary(out)$coef, digits=c(0, 2, 2, 1, 2))
 print(tab, type="latex", comment = F, table.placement = "H")
 ```
 
+
+# General Discussion
+
+* Recap findings
+    * Active learning advantage in a direct replication (yay science!)
+    * Passive-active better than Active-passive
+    * Conceptual replication
+    
+* Expand on why we see AR > RA
+    * Sequential hypothesis testing model 
+    * Gain some understanding of task before exploring
+    * RA is bad because you can't refine your current hypothesis. Can only use the data you are given
+    to confirm/reject current hypothesis
+
+* Limitations
+    * AA was always best
+    * task analysis 
+    * complexity of real world learning
+    
+* Takeaway point: 
+
 # Acknowledgements
 
-We are grateful to Doug Markant and Todd Gureckis for sharing their data and the details of the original experiment. We thank the members of the Language and Cognition Lab for their helpful feedback on this project. This work was supported by a National Science Foundation Graduate Research Fellowship to KM.
+We are grateful to Doug Markant and Todd Gureckis for sharing the details and code from the original experiment. We thank the members of the Language and Cognition Lab for their helpful feedback on this project. This work was supported by a National Science Foundation Graduate Research Fellowship to KM.
 
 # References 
 

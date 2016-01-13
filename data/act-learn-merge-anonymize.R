@@ -20,7 +20,9 @@ df1 %<>% mutate(age = as.character(age),
                 odb_param = as.character(odb_param),
                 trial_number = as.character(trial_number),
                 block_factor = as.factor(block),
-                framing_condition = "none") 
+                framing_condition = "none",
+                experiment = "sequence",
+                confidence = NA) 
 
 df2 %<>% mutate(trial_training_block = condition,
                 block = as.numeric(block),
@@ -28,7 +30,9 @@ df2 %<>% mutate(trial_training_block = condition,
                 condition = ifelse(condition == "receptive", "receptive_receptive", 
                                    ifelse(condition == "active", "active_active", 
                                           condition)),
-                framing_condition = "none")
+                framing_condition = "none",
+                experiment = "replication",
+                confidence = NA)
 
 df3 %<>% mutate(trial_training_block = condition,
                 category_type = "rule-based",
@@ -40,15 +44,18 @@ df3 %<>% mutate(trial_training_block = condition,
                 condition = ifelse(condition == "receptive", "receptive_receptive", 
                                    ifelse(condition == "active", "active_active", 
                                           condition)),
-                framing_condition = "none") %>% 
-    select(-confidence, -radius_trial)
+                framing_condition = "none", 
+                experiment = "replication") %>% 
+    select(-radius_trial)
 
 df4 %<>% mutate(age = as.character(age),
                 block = as.numeric(block),
                 odb_stim = as.character(odb_stim),
                 odb_param = as.character(odb_param),
                 trial_number = as.character(trial_number),
-                block_factor = as.factor(block)) 
+                block_factor = as.factor(block),
+                experiment = "prior-manipulation",
+                confidence = NA) 
 
 # Now merge all experiments
 df <- bind_rows(df1, df2, df3, df4)

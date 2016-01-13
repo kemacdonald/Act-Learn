@@ -8,7 +8,7 @@ output: html_document
 ```{r, echo = F}
 rm(list=ls()) # clear workspace
 knitr::opts_chunk$set(warning=FALSE, message=FALSE, sanitize = T, 
-                      fig.height=6, fig.width=9, echo=F, cache = T)
+                      fig.height=6, fig.width=9, echo=F, cache = F)
 ```
 
 
@@ -36,9 +36,14 @@ df_comments <- df %>%
     arrange(condition, category_type, order, understand)
 ```
 
+## Data cleaning.
+
 ```{r}
 # Rename conditions and reorder levels of the condition factor.
-df %<>% mutate(condition = factor(condition),
+df %<>% mutate(condition_long = condition,
+               condition = factor(condition),
+               category_type_string = category_type,
+               framing_condition_string = framing_condition,
                category_type = factor(category_type),
                odb_scale = ifelse(odb_scale == "radius_scale", "radius", 
                                   ifelse(odb_scale == "orientation_scale", "orientation",
@@ -49,11 +54,14 @@ df$condition <- factor(df$condition, levels = c("AA", "RA", "AR", "RR", "YY"))
 
 levels(df$category_type) <- c("Info-Integration", "Rule-Based")
 df$category_type <- factor(df$category_type, levels = c("Rule-Based", "Info-Integration")) 
+
+levels(df$framing_condition) <- c("Info-Integration", "None", "Rule-Based")
 ```
 
+Remove participants who reported not understanding the task.
+
 ```{r}
-# Remove participants who reported misunderstanding the task
-df %<>% filter(block == 1 | block == 2, condition != "YY")
+df %<>% filter(understand != "No")
 ```
 
 ## Descriptives
@@ -80,26 +88,22 @@ Histogram of length of experiment split by condition
 
 ```{r, echo=F}
 ss_rt <- df %>%
-    group_by(subids, condition) %>%
+    group_by(subids, experiment, condition) %>%
     summarise(exp_length_min = sum(rt) / 60000)
 
-qplot(exp_length_min, data=ss_rt, facets=.~condition)
+qplot(exp_length_min, data=ss_rt, facets=experiment~condition)
 ```
 
-## Experiment 1: Sequence 
+## Experiment 1: Replication
 
 ```{r}
-df_exp1 <- df %>% filter(block == 1 | block == 2, 
-                         condition != "YY", 
-                         framing_condition == "none")
+df_rep <- df %>% filter(experiment == "replication")
 ```
 
-### Accuracy analysis 
+### Mean accuracy analysis 
 
-Get mean accuracy for each condition and category type
-
-```{r, echo=F}
-ms_exp1 <- df_exp1 %>%
+```{r}
+ms_rep <- df_rep %>%
     filter(trial_type == "test") %>%
     group_by(condition, category_type) %>%
     summarise(mean_accuracy = mean(correct),
@@ -107,10 +111,10 @@ ms_exp1 <- df_exp1 %>%
               ci_low = ci.low(correct))
 ```
 
-Plot.
+Plot
 
-```{r mean acc plot condition/order, echo=F, fig.width=14}
-ggplot(aes(x=condition, y=mean_accuracy), data=ms_exp1) + 
+```{r}
+ggplot(aes(x=condition, y=mean_accuracy), data=ms_rep) + 
     geom_bar(stat = "identity", aes(fill = condition)) + 
     geom_linerange(aes(ymin=mean_accuracy - ci_low, 
                        ymax=mean_accuracy + ci_high), 
@@ -127,6 +131,110 @@ ggplot(aes(x=condition, y=mean_accuracy), data=ms_exp1) +
     theme_bw()
 ```
 
+### Block analysis 
+
+```{r}
+ms_rep_block <- df_rep %>%
+    filter(trial_type == "test") %>%
+    group_by(condition, category_type, block) %>%
+    summarise(mean_accuracy = mean(correct, na.rm=T),
+              ci_high = ci.high(correct),
+              ci_low = ci.low(correct))
+```
+
+Plot
+
+```{r}
+block_plot_exp1 <- ggplot(aes(x=block, y=mean_accuracy, color = condition), 
+                          data=filter(ms_rep_block, category_type == "Rule-Based")) +
+    geom_pointrange(aes(ymin=mean_accuracy - ci_low, 
+                        ymax=mean_accuracy + ci_high,
+                        color = condition), 
+                    size=0.6) +
+    geom_hline(yintercept = 0.5, linetype = "dashed") +
+    geom_smooth(data = filter(ms_rep_block, category_type == "Rule-Based"), method = "loess", se=F) +
+    facet_grid(.~category_type) +
+    scale_x_discrete() +
+    scale_y_continuous(limits=c(0.4,1.0)) +
+    scale_color_solarized() +
+    ylab("Mean Accuracy") +
+    xlab("Block") +
+    guides(color = F) +
+    theme(text = element_text(size=16)) +
+    theme_bw()
+
+direct.label(block_plot_exp1, list(last.bumpup, hjust = -0.5))
+```
+
+### Confidence analysis
+
+```{r}
+df_rep %>%
+    filter(trial_type == "test", confidence != is.na(confidence)) %>%
+    mutate(conf_level = cut(confidence, 4)) %>%
+    group_by(condition, conf_level) %>%
+    summarise(mean_correct = mean(correct), 
+              ci_high = ci.high(correct),
+              ci_low = ci.low(correct)) %>%
+    ggplot(aes(x = conf_level, y = mean_correct, col = condition, group = condition)) +
+    geom_pointrange(aes(ymin=mean_correct - ci_low, 
+                        ymax=mean_correct + ci_high,
+                        color = condition), 
+                    size=0.6) +
+    geom_smooth(se=F, method = "loess") + 
+    scale_x_discrete() +
+    scale_color_solarized() +
+    xlab("Binned Confidence Level") +
+    ylab("Mean Proportion Correct") +
+    theme(text = element_text(size=16))
+
+```
+
+### Relationship between evidence selection and test over time
+
+```{r}
+#TODO
+```
+
+## Experiment 2: Sequence 
+
+```{r}
+df_sequence <- df %>% filter(block == 1 | block == 2, condition %in% c("RA", "AR", "RR", "AA"))
+```
+
+### Accuracy analysis 
+
+Get mean accuracy for each condition and category type
+
+```{r}
+ms_sequence <- df_sequence %>%
+    filter(trial_type == "test") %>%
+    group_by(condition, category_type) %>%
+    summarise(mean_accuracy = mean(correct),
+              ci_high = ci.high(correct),
+              ci_low = ci.low(correct))
+```
+
+Plot.
+
+```{r mean acc plot condition/order, echo=F, fig.width=14}
+ggplot(aes(x=condition, y=mean_accuracy), data=ms_sequence) + 
+    geom_bar(stat = "identity", aes(fill = condition)) + 
+    geom_linerange(aes(ymin=mean_accuracy - ci_low, 
+                       ymax=mean_accuracy + ci_high), 
+                   size=0.6,
+                   position=position_dodge(width=0.9)) + 
+    facet_grid(.~category_type) +
+    coord_cartesian(ylim=c(0.55,0.85)) +
+    scale_fill_solarized() +
+    ylab("Mean Accuracy") +
+    xlab("Condition") +
+    facet_grid(.~category_type) +
+    theme(text = element_text(size=16)) +
+    guides(fill=F) +
+    theme_bw()
+```
+
 We see the overall advantage for active learning over passive learning across both category types. 
 
 ## Accuracy by block analysis
@@ -134,7 +242,7 @@ We see the overall advantage for active learning over passive learning across bo
 Next, we analyze accuracy across the two blocks.
 
 ```{r acc by block, echo=F}
-ms_block_exp1 <- df_exp1 %>%
+ms_block_sequence <- df_sequence %>%
     filter(trial_type == "test") %>%
     group_by(condition, block, category_type) %>%
     summarise(mean_accuracy = mean(correct),
@@ -143,7 +251,7 @@ ms_block_exp1 <- df_exp1 %>%
 ```
 
 ```{r acc by block plot, echo=F}
-block_plot_exp1 <- ggplot(aes(x=block, y=mean_accuracy), data=ms_block_exp1) +
+block_plot_exp1 <- ggplot(aes(x=block, y=mean_accuracy), data=ms_block_sequence) +
     geom_pointrange(aes(ymin=mean_accuracy - ci_low, 
                         ymax=mean_accuracy + ci_high,
                         color = condition), 
@@ -181,14 +289,14 @@ Order here refers to whether size or angle was the category dimension.
 Rename order labels, so they make sense
 
 ```{r}
-df_exp1 %<>% mutate(order_rule_based = ifelse(order == "order1" & category_type == "Rule-Based", "Size",
+df_sequence %<>% mutate(order_rule_based = ifelse(order == "order1" & category_type == "Rule-Based", "Size",
                                          ifelse(order == "order2" & category_type == "Rule-Based", "Angle",
                                                 NA)))
 ```
 
 
 ```{r acc by block and dimension, echo=F}
-ms_block_order_exp1 <- df_exp1 %>%
+ms_block_order_sequence <- df_sequence %>%
     filter(trial_type == "test") %>%
     group_by(condition, block_factor, order, order_rule_based, category_type) %>%
     summarise(mean_accuracy = mean(correct),
@@ -201,8 +309,8 @@ ms_block_order_exp1 <- df_exp1 %>%
 ### Rule-Based category structure
 
 ```{r acc by block and dim plot, echo=F}
-block_plot2_exp1 <- ggplot(aes(x=block_factor, y=mean_accuracy, color = condition, group = condition), 
-       data = filter(ms_block_order_exp1, category_type == "Rule-Based")) +
+block_plot2_sequence <- ggplot(aes(x=block_factor, y=mean_accuracy, color = condition, group = condition), 
+       data = filter(ms_block_order_sequence, category_type == "Rule-Based")) +
     geom_point() +
     geom_smooth(aes(color = condition), method = "lm", se=F) +
     geom_hline(yintercept = 0.5, linetype = "dashed") +
@@ -216,8 +324,7 @@ block_plot2_exp1 <- ggplot(aes(x=block_factor, y=mean_accuracy, color = conditio
     theme_bw() +
     theme(text = element_text(size=16)) 
     
-
-direct.label(block_plot2_exp1, list(last.bumpup, hjust = -0.5))
+direct.label(block_plot2_sequence, list(last.bumpup, hjust = -0.5))
 ```
 
 For the category that depends on size, AA and RA end up on top of each other, whereas AR and RR do not. I'm not sure what's going on with the "angle" category -- Perhaps this is just easier to learn overall and so we are not seeing any condtion differences? 
@@ -227,8 +334,8 @@ Also, there seems to be some between subjects variation here -- could this expla
 ### Information Integration category structure 
 
 ```{r acc by block and dim plot II, echo=F}
-block_plot3_exp1 <- ggplot(aes(x=block_factor, y=mean_accuracy, color = condition, group = condition),
-       data = filter(ms_block_order_exp1, category_type == "information-integration")) +
+block_plot3_sequence <- ggplot(aes(x=block_factor, y=mean_accuracy, color = condition, group = condition),
+       data = filter(ms_block_order_sequence, category_type == "Info-Integration")) +
     geom_point() +
     geom_line() +
     geom_hline(yintercept = 0.5, linetype = "dashed") +
@@ -242,7 +349,7 @@ block_plot3_exp1 <- ggplot(aes(x=block_factor, y=mean_accuracy, color = conditio
     theme_bw() +
     theme(text = element_text(size=18)) 
     
-direct.label(block_plot3_exp1, list(last.bumpup, hjust = -0.5))
+direct.label(block_plot3_sequence, list(last.bumpup, hjust = -0.5))
 ```
 
 ## Evidence selection analysis (active learning)
@@ -251,7 +358,7 @@ Analyze the average distance of participants' samples from the optimal decision
 boundary.
 
 ```{r sampling data, echo=F}
-df_sampling_exp1 <- df_exp1 %>% 
+df_sampling_exp1 <- df_sequence %>% 
     filter(trial_type == "training", condition %in% c("AA", "RA", "AR"),
            block == 1 | block == 2) %>% 
     dplyr::select(subids, block, trial_type, condition, 
@@ -504,27 +611,29 @@ knitr::kable(summary(m3_exp1)$coefficients)
 Intercept is the mean of the means (or the grand mean) of all the groups. These data are unbalanced.
 Active better than passive. Information integration worse than rule-based.
 
-## Experiment 2: Manipulate learner's prior hypothesis 
+## Experiment 3: Manipulate learner's prior hypothesis 
 
 Here we directly manipulate the match/mismatch between task framing and category type (1D category X 2D category). This tests the importance of the learner's prior hypohtesis for the effectiveness of active learning. This experiment can also help us understand how a learner revises their active learning when the data doesn't match their hypothesis.
 
 ```{r}
-df_exp2 <- filter(df, framing_condition != "none") %>% 
-    mutate(condition = ifelse(category_type == framing_condition, "match", "mismatch"))
+df_prior <- filter(df, experiment == "prior-manipulation") %>% 
+    mutate(condition = ifelse(category_type_string == framing_condition_string, "Match", "Mismatch"))
 ```
 
-Descriptives
+### Descriptives
 
 ```{r}
-df_exp2 %>% 
+df_prior %>% 
     distinct(subids) %>% 
     xtabs(formula = ~ condition + category_type + order) %>% 
     as.data.frame() %>% 
     rename(count = Freq)
 ```
 
+### Overall accuracy analysis
+
 ```{r}
-ms_exp2 <- df_exp2 %>% 
+ms_prior <- df_prior %>% 
     filter(trial_type == "test") %>% 
     group_by(condition, category_type) %>% 
     summarise(mean_accuracy = mean(correct),
@@ -532,11 +641,87 @@ ms_exp2 <- df_exp2 %>%
               ci_low = ci.low(correct))
 ```
 
+Plot
+
 ```{r}
-ms_block_exp2 <- df_exp2 %>% 
+ggplot(aes(x=condition, y=mean_accuracy), data=ms_prior) + 
+    geom_bar(stat = "identity", aes(fill = condition)) + 
+    geom_linerange(aes(ymin=mean_accuracy - ci_low, 
+                       ymax=mean_accuracy + ci_high), 
+                   size=0.6,
+                   position=position_dodge(width=0.9)) + 
+    facet_grid(.~category_type) +
+    coord_cartesian(ylim=c(0.6,0.9)) +
+    scale_fill_solarized() +
+    ylab("Mean Accuracy") +
+    xlab("Condition") +
+    facet_grid(.~category_type) +
+    theme(text = element_text(size=16)) +
+    guides(fill=F) +
+    theme_bw()
+
+```
+
+### Block analysis
+
+```{r}
+ms_prior_block <- df_prior %>% 
     filter(trial_type == "test") %>% 
-    group_by(condition, category_type, block_factor) %>% 
+    group_by(condition, category_type, block) %>% 
     summarise(mean_accuracy = mean(correct, na.rm=T),
               ci_high = ci.high(correct),
               ci_low = ci.low(correct))
 ```
+
+Plot
+
+```{r}
+block_plot_prior <- ggplot(aes(x=block, y=mean_accuracy, color = condition), 
+                          data=ms_prior_block) +
+    geom_pointrange(aes(ymin=mean_accuracy - ci_low, 
+                        ymax=mean_accuracy + ci_high,
+                        color = condition), 
+                    size=0.6) +
+    geom_hline(yintercept = 0.5, linetype = "dashed") +
+    geom_line() +
+    facet_grid(.~category_type) +
+    scale_x_discrete() +
+    scale_y_continuous(limits=c(0.4,1.0)) +
+    scale_color_solarized() +
+    ylab("Mean Accuracy") +
+    xlab("Block") +
+    guides(color = F) +
+    theme(text = element_text(size=16)) +
+    theme_bw()
+
+direct.label(block_plot_prior, list(last.bumpup, hjust = -0.5))
+```
+
+Plot individual participants across blocks 
+
+```{r, fig.height=9, fig.width=14}
+ss_mean_acc_prior <- df_prior %>%
+    filter(trial_type == "test") %>%
+    group_by(subids, condition, block, order, category_type) %>%
+    summarise(mean_accuracy = mean(correct),
+              ci_high_acc = ci.high(correct),
+              ci_low_acc = ci.low(correct))
+```
+
+Plot.
+
+```{r}
+ggplot(aes(x=as.factor(block), y=mean_accuracy, color = order, group = as.factor(subids)),
+       data=ss_mean_acc_prior) +
+    geom_line() +
+    geom_smooth(aes(group=1), method = "lm", se = F, color = "red", size = 2) +
+    facet_grid(category_type~condition) +
+    xlab("Block") +
+    ylab("Mean Accuracy") +
+    theme(text = element_text(size=16)) +
+    scale_color_solarized()
+```
+
+There doesn't seem to be any evidence that the match/mismatch manipulation had any effect on classification accuracy. I think this kind of active learning -- where you get many opportunities to design your own antennas -- does not lend itself to this subtle of a manipulation. 
+
+Maybe this kind of experiment is still worth trying with the quadmods paradigm?
