@@ -289,8 +289,10 @@ Order here refers to whether size or angle was the category dimension.
 Rename order labels, so they make sense
 
 ```{r}
-df_sequence %<>% mutate(order_rule_based = ifelse(order == "order1" & category_type == "Rule-Based", "Size",
-                                         ifelse(order == "order2" & category_type == "Rule-Based", "Angle",
+df_sequence %<>% mutate(order_rule_based = ifelse(order == "order1" & 
+                                                      category_type == "Rule-Based", "Size",
+                                         ifelse(order == "order2" & 
+                                                    category_type == "Rule-Based", "Angle",
                                                 NA)))
 ```
 

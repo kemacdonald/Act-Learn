@@ -31,7 +31,7 @@ df2 %<>% mutate(trial_training_block = condition,
                                    ifelse(condition == "active", "active_active", 
                                           condition)),
                 framing_condition = "none",
-                experiment = "replication",
+                experiment = "replication_1b",
                 confidence = NA)
 
 df3 %<>% mutate(trial_training_block = condition,
@@ -45,7 +45,7 @@ df3 %<>% mutate(trial_training_block = condition,
                                    ifelse(condition == "active", "active_active", 
                                           condition)),
                 framing_condition = "none", 
-                experiment = "replication") %>% 
+                experiment = "replication_1a") %>% 
     select(-radius_trial)
 
 df4 %<>% mutate(age = as.character(age),
