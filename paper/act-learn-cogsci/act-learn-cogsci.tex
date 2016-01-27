@@ -49,7 +49,8 @@
 % \textwidth 16cm
 % \textheight 21cm
 
-\title{Testing the interaction between active and passive learning}
+\title{How should we structure learning contexts? Understanding the mix of
+active and passive learning}
 
 
 \author{{\large \bf Kyle MacDonald} \\ \texttt{kyle.macdonald@university.edu} \\ Department of Psychology \\ Stanford University \And {\large \bf Michael C. Frank} \\ \texttt{mcfrank@university.edu} \\ Department of Psychology \\ Stanford University}
@@ -59,65 +60,89 @@
 \maketitle
 
 \begin{abstract}
-Self-directed (``active'') learning is often pitted against passive
-learning to see which training leads to better learning outcomes. But
-real-world learning unfolds over time and often contains both active and
-passive learning \emph{within} the same context. In the current work, we
-explore the interaction between active and passive learning in three
-category learrning experiments with adults. First, we replicate the
-active over passive learning advantage found in Markant \& Gureckis
-(2014) (Experiments 1a and 1b). Then, in Experiments 2 and 3 we provide
-direct tests of how different sequences of active/passive training
-modulate the effectiveness of active learning in two markedly different
-concept learning tasks. Across all three experiments, active training
-lead to better learning of the target concept compared to passive
-training. Passive-first learners performed better than Active-first in
-both Experiments 2 and 3. Our data provide evidence that active learning
-can be more effective after building a better representation of the
-learning task.
+Much of what we know depends on contexts that contain \emph{both} active
+and passive learning. But how should we structure the environment in
+order to maximize learning outcomes? In the current work, we explore how
+different sequences of active and passive training affect concept
+learning in adults. First, we replicate the active over passive learning
+advantage found in Markant \& Gureckis (2014) (Experiments 1a and 1b).
+Then in Experiment 2, we provide a direct test of how different
+sequences of active/passive training affect people's learning outcomes.
+Across both experiments, active training leads to better overall
+learning of the target concept compared to passive training.
+Interestingly, in Experiment 2 ``passive-first'' learners performed
+better than ``active-first'' learners. These data provide evidence that
+active learning can be more effective after people have constructed a
+stronger representation of the learning task.
 
 \textbf{Keywords:}
-active learning, category learning, replication, order effects
+self-directed learning, concept learning, replication
 \end{abstract}
 
 \section{Introduction}\label{introduction}
 
-Active learning describes a process where people can select what
-information they will learn
-next.\footnote{Here we focus on deliberate decisions about what to learn, as opposed to other uses of the term "active" learning (e.g., being actively engaged with learning materials).}
-This learning stands in contrast to passive learning, where people
-receive information presented to them from the world. For example,
-consider a child playing with a new toy, testing functions to see how it
-works (active) compared to a child watching someone else test the toy's
-functions (passive). In both scenarios, the child sees some of the toy's
-functions, but in the active context, the child has control over the
-sequence of incoming information.
+Learning is the result of a complex interaction of active and passive
+processes. It is almost impossible to think of a case where people learn
+a concept entirely from information that they generate themselves
+(active learning) or entirely from information generated from the world
+(passive learning). And yet we know relatively little about how to best
+structure the sequence of active and passive learning in order to
+maximize learning outcomes. For example, consider a teacher introducing
+a challenging math concept: should she allow students to explore first
+and then provide instruction, or should she teach first and then let
+students actively explore?
 
-The potential benefits of active learning have been the focus of
+The potential advantage for active learning has been the focus of
 research in education (Grabinger \& Dunlap, 1995), machine learning
-(Settles, 2012), and cognitive science (Castro et al., 2009). In their
-synthesis of this literature, Gureckis \& Markant (2012) present four
-``cognitive'' explanations for why selecting information could improve
-learning outcomes: (1) selection of the most informative examples, (2)
-increased encoding of selected examples, (3) the learner has direct
-knowledge of the sampling process, and (4) planning an action leads to a
-deeper understanding of the learning task.
+(Settles, 2012), and cognitive science (Castro et al., 2009). In the
+majority of these studies, researchers isolate active and passive
+training, and test which regime leads to better learning outcomes. In
+their review of this literature, Gureckis \& Markant (2012) present a
+set a general ``cognitive'' explanations for why active learning might
+be helpful across different tasks and learning contexts. One explanation
+is that people can use their prior experience to select the most
+informative examples (e.g., asking a question about something that is
+particularly confusing). Another explanation is that the process of
+active learning causes people to engage more deeply with the task,
+allowing them to develop better learning strategies.\footnote{This idea
+  is similar to work showing that simply providing an explanation can
+  deepen understanding of a concept (Lombrozo, 2006).} But Gureckis \&
+Markant (2012) point out that the effectiveness of selection-based
+learning is fundamentally linked to the quality of the learner's
+\emph{representation of the task}. If the representation is poor, or
+there is a prior misconception, then active learning will not be
+effective and might even lead to biased information seeking (e.g.,
+confirmation bias (Nickerson, 1998)).
 
-In the majority of these studies, researchers isolate active and passive
-training, and test which regime leads to better learning outcomes. For
-example, Markant \& Gureckis (2014) compared the effectiveness of active
-vs.~passive training on the rate of participants' learning of two
-abstract category structures: a Rule-Based (RB) structure where the
-category boundary varied along a single dimension (e.g., size), and an
-Information-Integration (II) structure where the category boundary was
-defined by two dimensions (e.g., size and angle). In the active learning
-condition, people selected examples from the category to test their
-beliefs; whereas in passive learning condition, the examples were
-generated randomly. Markant \& Gureckis (2014) found that participants
-in the active condition learned faster and achieved a higher overall
-accuracy, but this advantage only held for the less complex, RB
-category. They concluded that active training can benefit learning, but
-it's effectiveness depends on the complexity of the target concept.
+These cognitive explanations lead to competing predictions about the
+effectiveness of different sequences of active and passive learning. One
+prediction is that receiving active learning first (active-first) is
+better because it engages learners and allows them to develop better
+learning strategies. Research from education on the concept of
+\emph{Productive Failure} shows that allowing students to first struggle
+(typically in the form of self-directed problem solving) with a task,
+leads to better uptake of subsequent instruction (Westermann \& Rummel,
+2012). Moreover, in a tightly controlled cross-situational word learning
+task, Kachergis, Yu, \& Shiffrin (2013) found that people who received
+active learning first preformed better overall when asked to recall
+newly learned words. Kachergis et al. (2013) suggest that learners
+developed better attentional and memory strategies during the active
+training, which transferred to passive learning context, increasing
+overall acccuracy.
+
+The competing prediction is that receiving passive learning first
+(passive-first) is better because it helps to set up a stronger task
+representation, allowing people to use their subsequent active learning
+more effectively. Evidence in support of this prediction comes from
+research that explores the contexts when the active learning advantage
+breaks down. For example, in a category learning task, Markant \&
+Gureckis (2014) found that active learning provided no benefit over
+passive learning when the target category structure was different from
+people's prior expectations. They suggest that the separation between
+expectation and concept caused people to select less helpful examples.
+In addition, work from machine learning shows that in practical settings
+random sampling is preferable to active learning when the correct model
+class (i.e., representation of the task) is unknown (Settles, 2012).
 
 \begin{CodeChunk}
 \captionsetup{width=0.8\textwidth}\begin{figure*}[t]
@@ -126,56 +151,39 @@ it's effectiveness depends on the complexity of the target concept.
 
 }
 
-\caption[The left panel shows a screenshot of the stimuli used in Experiments 1 and 2]{The left panel shows a screenshot of the stimuli used in Experiments 1 and 2. The right panel shows examples of distributions of training stimuli shown to participants passive learning condition from the Rule-Based category and the Information-Integration category.}\label{fig:stimuli_exp1}
+\caption[The left panel shows a screenshot of the stimuli used in Experiments 1 and 2]{The left panel shows a screenshot of the stimuli used in Experiments 1 and 2. The right panel shows examples of distributions of training stimuli shown to participants in the passive learning condition. Each point represents a different antenna, constructed with an orientation value (vertical axis) and radius value (horizontal axis). The color of the points show the category membership of each antenna (red is Channel 1, blue is Channel 2). The solid line in each facet represents  the optimal category boundary for both the Rule-Based category and the Information-Integration category structures.}\label{fig:stimuli_exp1}
 \end{figure*}
 \end{CodeChunk}
 
-While direct comparisons of active and passive learning are important
-for understanding where and when active learning might be appropriate,
-real-world learning unfolds over time and often involves a mix of both
-types of contexts. Returning to the example of a child learning about a
-new toy -- the child might see some functions demonstrated by another
-person, and then be given the opportunity to play with the toy (or vice
-versa) \emph{within} the same learning context. Moreover, there are
-markedly different costs associated with active compared to passive
-learning, with active learning requiring more effort and time on the
-part of the learner. Thus, understanding how different sequences of
-active/passive learning interact to affect learning outcomes is an
-important question for both theoretical and applied reasons.
+In the current work, we set out to test these two predictions by
+exploring the effectiveness of different sequences of active/passive
+learning. We use a category learning paradigm from Markant \& Gureckis
+(2014), where they found a reliable advantage for active over passive
+learning. In this task, people learn one of two abstract categories: a
+Rule-Based (RB) structure where the category boundary varied along a
+single dimension (e.g., size), and a more complex
+Information-Integration (II) structure where the category boundary was
+defined by two dimensions (e.g., size and angle). Active learners
+generate their own examples to test their beliefs; whereas passive
+learners receive examples that were generated randomly.
 
-Research in education has asked a related question: How does varying the
-order of different teaching methods affect students' uptake of
-information? One illustrative example is the work on \emph{Productive
-Failure}, where researchers find that allowing students to struggle with
-a task before a lecture (typically in the form of self-directed problem
-solving), leads to better uptake of the subsequent instruction
-(Westermann \& Rummel, 2012). The takeaway from this work is that order
-of presentation matters for maximizing students' learning.
+We predicted that passive-first training would be better in this task
+because learners can generate and refine hypotheses during the passive
+block, which they then refine with highly informative examples in the
+active block. Moreover, Markant \& Gureckis (2014) found that the
+quality of sampling behavior was ``worse than random in the early blocks
+of their experiment, suggesting that active learning was less effective
+early in the task.
 
-In comparison, there has been relatively little basic cognitive science
-research testing different sequences of active and passive learning. One
-example is Kachergis, Yu, \& Shiffrin (2013), where learners were given
-either passive-first or active-first training in a cross-situational
-word learning task. People who received active learning first preformed
-better overall when asked to recall newly learned words. Kachergis et
-al. (2013) suggest that learners developed better attentional and memory
-strategies during the active training, which transferred to the passive
-training block, and boosted their overall acccuracy. But we do not yet
-know whether this ``active-first'' advantage would generalize to other
-types of learning tasks.
-
-In the current set of studies, we test the hypothesis that active
-learning is more effective after people gain experience with the
-learning task. In Experiments 1a and 1b, we directly replicate the
-active learning advantage found in Markant \& Gureckis (2014). In
-Experiment 2, we build on our replication data to show that
-passive-first training is more effective comprared to active-first. In
-Experiment 3, we find the same passive-first advantage in a novel
-paradigm where participants learn a more complex, heirarchical category
-structure. Together, the data suggest that active learning can provide
-an advantage over passive learning, but this advantage depends on the
-learners' representation of the task, which can be improved by receiving
-more active learning or an initial bout of passive learning.
+The plan of the paper is as follows: In Experiments 1a, we present a
+direct replication of the active learning advantage found in Markant \&
+Gureckis (2014) for the RB category structure. In Experiment 1b, we test
+the more complex II category structure. Then, in Experiment 2, we build
+on our replication data to show that passive-first training is more
+effective compared to active-first training. Together, the data suggest
+that active learning can provide an advantage over passive learning, but
+this advantage depends on the learner's representation of the task,
+which can be improved by receiving more experience with the task.
 
 \section{Experiment 1a}\label{experiment-1a}
 
@@ -201,6 +209,21 @@ and downloaded at the project page for this paper:
 
 \subsection{Methods}\label{methods}
 
+\subsubsection{Power analysis and planned
+sample}\label{power-analysis-and-planned-sample}
+
+We calculated Cohen's d for the test comparing overall accuracy between
+the active and passive learning conditions (d = 0.47). Next we conducted
+a post hoc power analysis and found that the original study achieved a
+power of \%43. Finally, we conducted an a priori power analysis for the
+proposed replication in order to achieve 80\%, 90\%, and 95\% power to
+detect that effect size. The results were: 80\% (n = 84, 42 in each
+group), 90\% (n = 158, 79 in each group), and 95\% (n = 238, 119 in each
+group). Our planned sample size was 48 participants, 24 in each
+condition. This sample size allowed us to achieve 47\% power to detect
+the an effect the size of the original finding. This sample size was
+chosen to maximize power within our funding constraints.
+
 \subsubsection{Participants}\label{participants}
 
 We posted a set of Human Intelligence Tasks (HITs) to Amazon Mechanical
@@ -215,7 +238,7 @@ participants.
 \subsubsection{Stimuli}\label{stimuli}
 
 The left panel of Figure 1 shows a screenshot of the stimuli used in
-Experiments 1a, 1b, and 2. Visual stimuli were black ``antennas'' on a
+across all experiments. Visual stimuli were black ``antennas'' on a
 white background. Each antenna could vary along two continuous
 dimensions -- radius size or central angle -- and was assigned a value
 between 1 and 600. These values were converted to pixel values for
@@ -298,9 +321,9 @@ justified by our experimental design: by-subject intercepts. We fit a
 logistic regression predicting test performance based on condition
 (active/passive) and block. The model was specified as
 \texttt{Correct $\sim$ 1 + Condition * Block + (1 | subject)}. We found
-a significant main effect of condition (\(\beta\) = -0.7, p \textless{}
+a significant main effect of condition (\(\beta\) = -0.72, p \textless{}
 .001) with better performance for active learners, and a significant
-main effect of block (\(\beta\) = 0.2, p \textless{} .001) such that
+main effect of block (\(\beta\) = 0.19, p \textless{} .001) such that
 responses were more accurate later in the experiment.
 
 \subsubsection{Relationship between sampling behavior and
@@ -308,7 +331,7 @@ learning}\label{relationship-between-sampling-behavior-and-learning}
 
 We were also interested in the relationship between participants'
 overall sampling behavior and learning outcomes. We follow Markant \&
-Gureckis (2014) and quantify the quality of a sample based on it's
+Gureckis (2014) and quantify the quality of a sample based on its
 orthogonal distance from the true category boundary, with samples closer
 to the boundary being of higher quality. For each participant, we
 computed a mean accuracy score and a mean sample distance score, and fit
@@ -377,16 +400,16 @@ accuracy}\label{overall-classification-accuracy-1}
 
 }
 
-\caption[The left panel shows overall accuracy performance for the Active and Passive training conditions]{The left panel shows overall accuracy performance for the Active and Passive training conditions. The right panel shows participants' accuracy across all six blocks in the experiment.}\label{fig:rep1b-acc-plot}
+\caption[The left panel shows overall accuracy performance for the Active and Passive training conditions]{The left panel shows overall accuracy performance for the Active and Passive training conditions. The right panel shows participants' accuracy across both blocks in the experiment.}\label{fig:rep1b-acc-plot}
 \end{figure}
 \end{CodeChunk}
 
 Figure 3 shows the overall effect of category structure and training
 condition on participants' accuracy performance. We fit the same
 logistic regression as specified in Experiment 1a. We found a
-significant main effect of category structure (\(\beta\) = -0.95, p
+significant main effect of category structure (\(\beta\) = -0.96, p
 \textless{} .001) with better performance in the RB category structure,
-and a significant main effect of condition (\(\beta\) = -0.7, p
+and a significant main effect of condition (\(\beta\) = -0.72, p
 \textless{} .001) such that participants in the passive and yoked
 conditions performed worse than participants in the active condition. We
 did not find any significant interactions.
@@ -462,38 +485,6 @@ Intercept is the mean of the means (or the grand mean) of all the
 groups. These data are unbalanced. Active better than passive.
 Information integration worse than rule-based.
 
-\section{Experiment 3}\label{experiment-3}
-
-Experiment 3 is a conceptual replication of the order effect findings
-using a novel paradigm where participants learn a higher dimensional
-concept.
-
-\subsection{Methods}\label{methods-3}
-
-\subsubsection{Stimuli}\label{stimuli-3}
-
-\subsubsection{Participants}\label{participants-3}
-
-Participant recruitment, and inclusionary/exclusionary criteria were
-identical to those of Experiment 1 and 2 (excluded TODO HITs). 40 HITs
-were posted for each condition (TODO) for total of TODO paid HITs.
-
-\subsubsection{Design and procedure}\label{design-and-procedure-3}
-
-\subsection{Results and Discussion}\label{results-and-discussion-3}
-
-\begin{table}[H]
-\centering
-\begin{tabular}{rrrrr}
-  \hline
- & Estimate & Std. Error & t value & Pr($>$$|$t$|$) \\ 
-  \hline
-(Intercept) & -0.07 & 0.09 & -0.7 & 0.46 \\ 
-  x & 1.98 & 0.09 & 23.3 & 0.00 \\ 
-   \hline
-\end{tabular}
-\end{table}
-
 \section{General Discussion}\label{general-discussion}
 
 \begin{itemize}
@@ -523,6 +514,17 @@ were posted for each condition (TODO) for total of TODO paid HITs.
     RA is bad because you can't refine your current hypothesis. Can only
     use the data you are given to confirm/reject current hypothesis
   \end{itemize}
+\end{itemize}
+
+Moreover, there are markedly different costs associated with active
+compared to passive learning, with active learning requiring more effort
+and time on the part of the learner. Thus, understanding how different
+sequences of active/passive learning interact to affect learning
+outcomes is an important question for both theoretical and applied
+reasons.
+
+\begin{itemize}
+\itemsep1pt\parskip0pt\parsep0pt
 \item
   Limitations
 
@@ -567,9 +569,15 @@ Kachergis, G., Yu, C., \& Shiffrin, R. M. (2013). Actively learning
 object names across ambiguous situations. \emph{Topics in Cognitive
 Science}, \emph{5}(1), 200--213.
 
+Lombrozo, T. (2006). The structure and function of explanations.
+\emph{Trends in Cognitive Sciences}, \emph{10}(10), 464--470.
+
 Markant, D. B., \& Gureckis, T. M. (2014). Is it better to select or to
 receive? Learning via active and passive hypothesis testing.
 \emph{Journal of Experimental Psychology: General}, \emph{143}(1), 94.
+
+Nickerson, R. S. (1998). Confirmation bias: A ubiquitous phenomenon in
+many guises. \emph{Review of General Psychology}, \emph{2}(2), 175.
 
 Settles, B. (2012). Active learning. \emph{Synthesis Lectures on
 Artificial Intelligence and Machine Learning}, \emph{6}(1), 1--114.
