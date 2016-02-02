@@ -1,18 +1,18 @@
 ---
-title: "How should we structure learning contexts? Understanding the mix of active and passive learning"
+title: "When does passive learning improve the effectiveness of active learning?"
 bibliography: library.bib
 csl: apa6.csl
 document-params: "10pt, letterpaper"
 
 author-information: > 
-    \author{{\large \bf Kyle MacDonald} \\ \texttt{kyle.macdonald@university.edu} \\ Department of Psychology \\ Stanford University
-    \And {\large \bf Michael C. Frank} \\ \texttt{mcfrank@university.edu} \\ Department of Psychology \\ Stanford University}
+    \author{{\large \bf Kyle MacDonald} \\ \texttt{kyle.macdonald@stanford.edu} \\ Department of   Psychology \\ Stanford University
+        \And {\large \bf Michael C. Frank} \\ \texttt{mcfrank@stanford.edu} \\ Department of Psychology \\ Stanford University}
 
 abstract: >
-    Much of what we know is a result of contexts that contain *both* active and passive learning. But how should we structure the environment in order to maximize learning outcomes? In the current work, we explore how different sequences of active and passive training affect concept learning in adults. First, we replicate the active over passive learning advantage found in @markant2014better (Experiments 1a and 1b). Then in Experiment 2, we provide a direct test of how different sequences of active/passive training affect people's learning outcomes. Across both experiments, active training leads to better overall learning of the target concept compared to passive training. Interestingly, in Experiment 2 "passive-first" learners performed better than "active-first" learners. These data provide evidence that active learning can be more effective after people have constructed a stronger representation of the learning task.
+    Much of what we learn comes from a mix of information that we select (active learning) and information that we receive (passive learning). But what type of learning is best for different kinds of learning problems? In the current work, we explore this question by comparing different sequences of active/passive training in an abstract concept learning task. First, we replicate the active learning advantage from @markant2014better (Experiments 1a and 1b). Then, we provide a direct test of whether experiencing active learning first or passive learning first improves concept learning (Experiment 2). Across both experiments, active training led to better learning of the target concept, but "passive-first" learners performed better than "active-first" learners. These findings broaden our understanding of when different sequences of active/passive learning are most effective, showing that for certain learning problems active exploration can be enhanced by prior passive learning.
     
 keywords:
-    "self-directed learning, concept learning, replication"
+    "active learning, concept learning, replication"
     
 output: cogsci2016::cogsci_paper
 ---
@@ -25,6 +25,8 @@ knitr::opts_chunk$set(fig.width=3, fig.height=3, fig.crop = F, fig.pos = "tb", f
 
 ```{r libraries}
 source("../../analysis/helpers/useful.R")
+library(compute.es)
+library(pwr)
 library(langcog)
 library(dplyr)
 library(magrittr)
@@ -35,17 +37,11 @@ library(ggplot2)
 library(xtable)
 ```
 
-```{r binomial-smoother}
-binomial_smooth <- function(...) {
-    geom_smooth(method = "glm", method.args = list(family = "binomial"), ...)
-}
-```
-
 ```{r data}
 df <- read.csv("../../data/act-learn-all-data-tidy.csv", stringsAsFactors = F)
 ```
 
-```{r data cleaning}
+```{r data_cleaning}
 # Rename conditions and reorder levels of the condition factor.
 df %<>% mutate(condition_long = condition,
                condition = factor(condition),
@@ -71,33 +67,6 @@ levels(df$condition_short) <- c("A", "AR", "RA", "R", "Y")
 df$condition_short <- factor(df$condition_short, levels = c("A", "RA", "AR", "R", "Y"))
 ```
 
-# Introduction
-
-Learning is the result of a complex interaction of active and passive processes. It is almost impossible to think of a case where people learn a concept entirely from information that they generate themselves (active learning) or entirely from information generated from the world (passive learning). And yet we know relatively little about how to best structure the sequence of active and passive learning in order to maximize learning outcomes. For example, consider a teacher introducing a challenging math concept: should she allow students to explore first and then provide instruction, or should she teach first and then let students actively explore? 
-
-The potential advantage for active learning has been the focus of research in education [@grabinger1995rich], machine learning [@settles2012active], and cognitive science [@castro2009human]. In the majority of these studies, researchers isolate active and passive training, and test which regime leads to better learning outcomes. In their review of this literature, @gureckis2012self present a set a general "cognitive" explanations for why active learning might be helpful across different tasks and learning contexts. One explanation is that people can use their prior experience to select the most informative examples (e.g., asking a question about something that is particularly confusing). Another explanation is that the process of active learning causes people to engage more deeply with the task, allowing them to develop better learning strategies.[^1] But @gureckis2012self point out that the effectiveness of selection-based learning is fundamentally linked to the quality of the learner's *representation of the task*. If the representation is poor, or there is a prior misconception, then active learning will not be effective and might even lead to biased information seeking (e.g., confirmation bias [@nickerson1998confirmation]).
-
-[^1]: This idea is similar to work showing that simply providing an explanation can deepen understanding of a concept [@lombrozo2006structure].
-
-These cognitive explanations lead to competing predictions about the effectiveness of different sequences of active and passive learning. One prediction is that receiving active learning first (active-first) is better because it engages learners and allows them to develop better learning strategies. Research from education on the concept of *Productive Failure* shows that allowing students to first struggle (typically in the form of self-directed problem solving) with a task, leads to better uptake of subsequent instruction [@westermann2012delaying]. Moreover, in a tightly controlled cross-situational word learning task, @kachergis2013actively found that people who received active learning first preformed better overall when asked to recall newly learned words. @kachergis2013actively suggest that learners developed better attentional and memory strategies during the active training, which transferred to passive learning context, increasing overall acccuracy.
-
-The competing prediction is that receiving passive learning first (passive-first) is better because it helps to set up a stronger task representation, allowing people to use their subsequent active learning more effectively. Evidence in support of this prediction comes from research that explores the contexts when the active learning advantage breaks down. For example, in a category learning task, @markant2014better found that active learning provided no benefit over passive learning when the target category structure was different from people's prior expectations. They suggest that the separation between expectation and concept caused people to select less helpful examples. In addition, work from machine learning shows that in practical settings random sampling is preferable to active learning when the correct model class (i.e., representation of the task) is unknown [@settles2012active].  
-
-```{r stimuli_exp1, fig.env = "figure*", fig.pos = "t", fig.width=6, fig.height=2.5, fig.align='center', set.cap.width=T, num.cols.cap=2, fig.cap = "The left panel shows a screenshot of the stimuli used in Experiments 1 and 2. The right panel shows examples of distributions of training stimuli shown to participants in the passive learning condition. Each point represents a different antenna, constructed with an orientation value (vertical axis) and radius value (horizontal axis). The color of the points show the category membership of each antenna (red is Channel 1, blue is Channel 2). The solid line in each facet represents  the optimal category boundary for both the Rule-Based category and the Information-Integration category structures."}
-
-grid::grid.raster(png::readPNG("figs/stimuli.png"))
-```
-
-In the current work, we set out to test these two predictions by exploring the effectiveness of different sequences of active/passive learning. We use a category learning paradigm from @markant2014better, where they found a reliable advantage for active over passive learning. In this task, people learn one of two abstract categories: a Rule-Based (RB) structure where the category boundary varied along a single dimension (e.g., size), and a more complex Information-Integration (II) structure where the category boundary was defined by two dimensions (e.g., size and angle). Active learners generate their own examples to test their beliefs; whereas passive learners receive examples that were generated randomly. 
-
-We predicted that passive-first training would be better in this task because learners can generate and refine hypotheses during the passive block, which they then refine with highly informative examples in the active block. Moreover, @markant2014better found that the quality of sampling behavior was "worse than random in the early blocks of their experiment, suggesting that active learning was less effective early in the task. 
-
-The plan of the paper is as follows: In Experiments 1a, we present a direct replication of the active learning advantage found in @markant2014better for the RB category structure. In Experiment 1b, we test the more complex II category structure. Then, in Experiment 2, we build on our replication data to show that passive-first training is more effective compared to active-first training. Together, the data suggest that active learning can provide an advantage over passive learning, but this advantage depends on the learner's representation of the task, which can be improved by receiving more experience with the task. 
-
-# Experiment 1a
-
-Experiment 1a is a direct replication of the advantage for active learning over passive learning found in @markant2014better. We tested participants' category learning for the RB category structure after receiving either active or passive training. We used the same stimuli and followed the exact procedures as the original study (described below). All of the stimuli and the experiments can be viewed and downloaded at the project page for this paper: https://kemacdonald.github.io/Act-Learn/. 
-
 ```{r exp1a-replication-data}
 df_rep <- df %>% 
     filter(experiment == "replication_1a", 
@@ -105,9 +74,80 @@ df_rep <- df %>%
            category_type == "Rule-Based")
 ```
 
-```{r rep1a-acc-computation}
+```{r rep1b-data}
+df_rep1b <- df %>% 
+    filter(experiment == "replication_1b", 
+           condition_short %in% c("A","R","Y")) 
+```
+
+```{r rep-sampling-data}
+df_rep_all <- df %>% filter(condition =="AA", category_type == "Rule-Based")
+df_sampling_exp1 <- df %>% filter(condition == "AA", category_type == "Rule-Based", 
+                                  trial_type == "training")
+```
+
+```{r seq_data}
+df_sequence <- df %>% filter(block == 1 | block == 2,
+                             experiment == "sequence",
+                             condition %in% c("RA", "AR"))
+
+df_sequence_rep <- df %>% filter(block == 1 | block == 2,
+                                 condition %in% c("RA", "AR", "RR", "AA"))
+```
+
+# Introduction
+
+Much of real-world learning occurs in contexts that contain *both* active and passive input. People rarely learn a new concept entirely from information generated by themselves (active learning[^1]) or entirely from information received from the world (passive learning). And yet we do not have a theory about which sequences of active/passive input are best for different kinds of learning problems. Consider a teacher introducing a challenging math concept: should she allow students to explore first and then provide instruction, or should she teach first and then let students actively explore?
+
+[^1]: Here we focus on deliberate decisions about what to learn, as opposed to other uses of the term "active" learning (e.g., being engaged with learning materials).
+
+The potential benefits of active learning have been the focus of much research in education [@grabinger1995rich], machine learning [@settles2012active], and cognitive science [@castro2009human]. In a review of this diverse literature, @gureckis2012self suggest that active learning can be superior because it allows people to use their prior experience and current hypotheses to select the most helpful examples (e.g., asking a question about something that is particularly confusing). But when might passive learning support better active learning?  
+
+@gureckis2012self emphasize that active exploration is fundamentally linked to the quality of the learner's understanding of the task: if the representation is poor, then self-directed learning will be biased and ineffective. The potential for bias in active learning suggests that receiving passive training first might be especially important for less constrained learning tasks where people are unlikely to discover the target concept. For example, work by @klahr2004equivalence shows that elementary school-aged children are less effective at discovering the principles of well-controlled experiments from their own self-directed learning. Moreover, @markant2014better showed that active exploration provided no benefit over passive input when there was a mismatch between the target concept and learners' prior hypotheses. In both of these cases, receiving passive training first might have provided learners with a stronger task understanding that enhanced their active exploration.
+
+In contrast, experiencing active learning first might be better for tasks with smaller problem spaces where helpful strategies can be extracted via active exploration. Education research on the concept of *productive failure* shows that allowing students to struggle with a task (e.g., self-directed problem solving) can lead to better uptake of subsequent instruction [@westermann2012delaying]. And work from cognitive science shows that completing a block of active learning prior to passive learning led to better word learning performance [@kachergis2013actively]. @kachergis2013actively suggest that active-first learners were able to develop attention and memory strategies during active training that improved their passive learning.
+
+In the current work, we provide a direct test of how different sequences of active/passive training affect abstract category learning. We use a well-understood perceptual category learning paradigm from @markant2014better, since this task produces a reliable active learning advantage. We predicted that passive-first training would be best for two reasons. First, we thought that people would generate hypotheses during passive learning, which they could then refine with highly informative examples during active exploration. Second, @markant2014better reported that the quality of active learning was suboptimal early in their experiment, presumably because people were building a better understanding of the learning task. Thus, we predicted that providing passive learning first would allow people to maximize the selection of high quality evidence during active learning and improve their performance. 
+
+The plan of the paper is as follows. We first present our replication of the active learning advantage found in @markant2014better (Experiments 1a and 1b). Then, we use @markant2014better's task to test whether passive-first training leads to better learning compared to active-first training (Experiment 2). Taken together, the data show that active learning provides an advantage over passive learning, but this advantage depends on the learner’s representation of the task, which can be improved via passive learning.
+
+```{r stimuli_exp1, fig.env = "figure", fig.pos = "t", fig.width=3.5, fig.height=1.5, fig.align='center', fig.cap = "An example of a training trial from the active learning condition in Experiments 1 and 2. Participants could rotate the antenna or change the antenna's size before seeing which channel the antenna received."}
+
+grid::grid.raster(png::readPNG("figs/stimuli1.png"))
+```
+
+# Experiment 1a
+
+Experiment 1a is a direct replication of the active learning advantage for the Rule-Based (RB) category structure found in @markant2014better. In this task, people are asked to learn a precise category boundary that is defined by a point on a single continuous dimension (e.g., size). Active learners generate their own examples, whereas passive learners see data generated randomly from the underlying category distributions. We used the same stimuli and followed the exact procedures as the original study with only minor differences, which we describe below. All of the stimuli, the experiments, and analysis code can be viewed and downloaded at the project page for this paper: https://kemacdonald.github.io/Act-Learn/. 
+
+## Methods
+
+### Participants
+
+```{r rep1a-demographics}
+demographics_replication <- df_rep %>% 
+    distinct(subids) %>% 
+    xtabs(formula = ~ condition_long + category_type_string) %>% 
+    as.data.frame() %>% 
+    rename(count = Freq)
+
+dnu_exp1a <- df_rep %>% distinct(subids) %>% count(understand) %>% filter(understand == "No")
+
+n_active_rep_1a <- demographics_replication$count[1]
+n_passive_rep_1a <- demographics_replication$count[2]
+```
+
+We planned a sample of 48 participants, 24 in each condition and posted a set of Human Intelligence Tasks (HITs) to Amazon Mechanical Turk. Only participants with US IP addresses and a task approval rate above 85% were allowed to participate, and each HIT paid one dollar. Data were excluded if participants completed the task more than once or if they reported to not understand the task at the end of the experiment (`r dnu_exp1a$n` HITs). The final sample consisted of `r (n_passive_rep_1a + n_active_rep_1a) - dnu_exp1a$n` participants. 
+
+```{r category_exp1, fig.env = "figure", fig.pos = "t", fig.width=3.5, fig.height=2.5, fig.align='center', fig.cap = "Example distributions of training stimuli shown to participants in the passive learning condition. Each point represents a different antenna, constructed with an orientation value (vertical axis) and radius value (horizontal axis). The color of the points show the category membership of each antenna (red: channel 1; blue: channel 2). The solid line in each facet represents the optimal category boundary for both the Rule-Based category and the Information-Integration category structures."}
+
+grid::grid.raster(png::readPNG("figs/category.png"))
+```
+
+```{r exp1a_acc_plot, fig.env = "figure*", fig.pos = "t", fig.width=4.5, fig.height=2.3, fig.align='center', fig.cap = "The left panel shows overall accuracy performance on the classification task for the Active and Passive training conditions from Experiment 1a. The right panel shows accuracy across each of the six blocks in the experiment. The colored curves are generated by a logarithmic smoother and the error bars indicate 95\\% confidence intervals computed by non-parametric bootstrap."}
+
 ms_rep <- df_rep %>%
-    filter(trial_type == "test") %>%
+    filter(trial_type == "test", understand != "No") %>%
     group_by(condition_short, category_type) %>%
     summarise(mean_accuracy = mean(correct),
               ci_high = ci.high(correct),
@@ -126,14 +166,8 @@ ss_rep <- df_rep %>%
     summarise(mean_accuracy = mean(correct, na.rm=T),
               ci_high = ci.high(correct),
               ci_low = ci.low(correct))
-```
 
-```{r exp1a_t-test}
-rep1a_t_test <- t.test(mean_accuracy ~ condition_short, var.equal=TRUE, 
-                       data=filter(ss_rep, experiment == "replication_1a"))
-```
-
-```{r exp1a_acc_plot, fig.env = "figure*", fig.pos = "t", fig.width=5, fig.height=2.5, fig.align='center', set.cap.width=T, num.cols.cap=2, fig.cap = "The left panel shows overall accuracy performance for the Active and Passive training conditions. The right panel shows participants' accuracy across each of the six blocks in the experiment. Colored lines are generated by a binomial smoother and error bars indicate 95\\% confidence intervals computed by non-parametric bootstrap."}
+levels(ms_rep$condition_short) <- c("Active", "RA", "AR", "Passive", "Y")
 
 acc_plot_1a <- ggplot(aes(x=condition_short, y=mean_accuracy), data=ms_rep) + 
     geom_bar(stat = "identity", aes(fill = condition_short)) + 
@@ -143,7 +177,7 @@ acc_plot_1a <- ggplot(aes(x=condition_short, y=mean_accuracy), data=ms_rep) +
                    position=position_dodge(width=0.9)) + 
     geom_hline(yintercept = 0.5, linetype = "dashed") +
     facet_grid(.~category_type) +
-    coord_cartesian(ylim=c(0.4,1.0)) +
+    coord_cartesian(ylim=c(0.5,1.0)) +
     scale_fill_solarized() +
     ylab("Mean Accuracy") +
     xlab("Condition") +
@@ -152,16 +186,19 @@ acc_plot_1a <- ggplot(aes(x=condition_short, y=mean_accuracy), data=ms_rep) +
     guides(fill=F) +
     theme_bw()
 
-block_plot_exp1 <- ggplot(aes(x=as.numeric(block), y=mean_accuracy, color = condition_short), 
+levels(ms_rep_block$condition_short) <- c("A", "RA", "AR", "P", "Y")
+
+block_plot_exp1 <- ggplot(aes(x=as.numeric(block), y=mean_accuracy, 
+                              color = condition_short), 
                           data=filter(ms_rep_block, category_type == "Rule-Based")) +
-    binomial_smooth() +
+    stat_smooth(method = "lm", formula = y ~ log(x), se = F) +
     geom_pointrange(aes(ymin=mean_accuracy - ci_low, 
                         ymax=mean_accuracy + ci_high,
                         color = condition_short), 
-                    size=0.3) +
+                    size=0.2) +
     geom_hline(yintercept = 0.5, linetype = "dashed") +
     facet_grid(.~category_type) +
-    scale_y_continuous(limits=c(0.4,1.0)) +
+    scale_y_continuous(limits=c(0.5,1.0)) +
     scale_x_continuous(limits=c(0.5,6.5), breaks = seq(1:6)) +
     scale_color_solarized() +
     ylab("Mean Accuracy") +
@@ -171,81 +208,57 @@ block_plot_exp1 <- ggplot(aes(x=as.numeric(block), y=mean_accuracy, color = cond
     theme_bw()
 
 block_plot_exp1 <- direct.label(block_plot_exp1, list(last.points, hjust = -0.5))
-gridExtra::grid.arrange(acc_plot_1a, block_plot_exp1, ncol = 2, widths = c(2.5,3))
-```
-
-## Methods
-
-### Power analysis and planned sample
-
-We calculated Cohen’s d for the test comparing overall accuracy between the active and passive learning conditions (d = 0.47). Next we conducted a post hoc power analysis and found that the original study achieved a power of %43. Finally, we conducted an a priori power analysis for the proposed replication in order to achieve 80%, 90%, and 95% power to detect that effect size. The results were: 80% (n = 84, 42 in each group), 90% (n = 158, 79 in each group), and 95% (n = 238, 119 in each group). Our planned sample size was 48 participants, 24 in each condition. This sample size allowed us to achieve 47% power to detect the an effect the size of the original finding. This sample size was chosen to maximize power within our funding constraints. 
-
-### Participants
-
-```{r rep1a-demographics}
-demographics_replication <- df_rep %>% 
-    distinct(subids) %>% 
-    xtabs(formula = ~ condition_long + category_type_string) %>% 
-    as.data.frame() %>% 
-    rename(count = Freq)
-
-dnu_exp1a <- df_rep %>% distinct(subids) %>% count(understand) %>% filter(understand == "No")
-
-n_active_rep_1a <- demographics_replication$count[1]
-n_passive_rep_1a <- demographics_replication$count[2]
-```
-
-We posted a set of Human Intelligence Tasks (HITs) to Amazon Mechanical Turk. Only participants with US IP addresses and a task approval rate above 85% were allowed to participate, and each HIT paid one dollar. Approximately 25 HITs were posted for each of the two between-subjects conditions. Data were excluded if participants completed the task more than once or if they reported that they did not understand the task at the end of the experiment (`r dnu_exp1a$n` HITs). The final sample consisted of `r (n_passive_rep_1a + n_active_rep_1a) - dnu_exp1a$n` participants. 
-
-```{r data-filter-1a}
-df_rep %<>% filter(understand != "No")
+gridExtra::grid.arrange(acc_plot_1a, block_plot_exp1, ncol = 2, widths = c(2,3))
 ```
 
 ### Stimuli
 
-The left panel of Figure 1 shows a screenshot of the stimuli used in across all experiments. Visual stimuli were black "antennas" on a white background. Each antenna could vary along two continuous dimensions -- radius size or central angle -- and was assigned a value between 1 and 600. These values were converted to pixel values for display on a computer screen. To ensure that participants could not complete a full rotation of the antenna, the rotation of the central angle was limited to 150 degrees. The minimum radius and angle values were randomized for each participant, such that each participant was assigned a unique optimal decision boundary. Finally, we used a Rule-Based category structure where the category boundary is defined along a single dimension: either the antenna's size or central angle (see the right panel of Figure 1). 
+Visual stimuli were black "antennas" on a white background (Fig 1). Each antenna could vary along two continuous dimensions -- radius size or central angle -- and was assigned a value between 1-600. To make sure that participants could not completely rotate the antenna, we limited the rotation to 150 degrees. The smallest radius and angle parameter values were randomized for each participant, so each participant had a unique category boundary. Finally, we used the Rule-Based category structure where the category boundary is defined by a point on a single dimension: either size or central angle. 
 
-Radius and angle values for the 96 passive training trials were generated from two Gaussian distributions with identical mean and covariance parameters as @markant2014better (see the right panel of Figure 1). For test trials, we created a uniform grid of 192 unique test items that covered the entire feature space. We randomly sampled 8 items from each quadrant to get 32 test trials for each block. We then randomized the order of the training and test trials within each block for each participant. 
+Radius and angle values for the 96 passive training trials were generated from two Gaussian distributions with identical mean and covariance parameters as @markant2014better (Fig 2). For test trials, we created a uniform grid of 192 unique test items that covered the entire parameter space. We randomly sampled 8 items from each quadrant to get 32 test trials for each block and randomized the order of training and test trials within each block and for each participant. 
 
 ### Design and procedure
 
-Participants saw a total of 288 trials (96 training trials and 192 test trials) across 6 blocks. Each block consisted of 16 training trials and 32 test trials. Before starting the task, participants were told that this was a game where they would see "loop antennas" for televisions and each antenna received one of two channels (CH1 or CH2), and their goal was to learn the difference between the two types of antennas. We introduced some uncertainty by telling participants that the antennas could pick up the wrong channel on occasion, and that they should learn what channel is most often received by a particular type of antenna.
+Participants saw a total of 288 trials (96 training trials and 192 test trials) across 6 blocks\footnote{Six blocks is two blocks shorter than the original experiment. We reduced the length to increase our sample size.}. Each block consisted of 16 training trials and 32 test trials. Before the task, participants were told that they would see "loop antennas" for televisions and each antenna received one of two channels (CH1 or CH2), and their goal was to learn the difference between the two types of antennas. We told participants that the antennas could sometimes pick up the wrong channel, and that they should learn what channel is most often received by a particular type of antenna.
 
-After the instructions, participants were randomly assigned to one the two between-subjects conditions (Active vs. Passive training). In the Active training condition, participants were able to design their own antennas to test. They modified the antenna by clicking and dragging the mouse from left to right. To change the size of the antenna, they first pressed the "Z" key. To change the angle, they first pressed the "X" key. When participants were finished with their design, they pressed the spacebar to see which channel (Ch1 or Ch2) the antenna received. The channel label appeared in a text box with a green border located above the antenna.
+After the instructions, participants were randomly assigned to one of the two between-subjects conditions (Active vs. Passive). In the Active condition, participants were able to design their own antennas. They modified the antenna by clicking and dragging the mouse from left to right. To change the size of the antenna, they first pressed the "Z" key. To change the angle, they first pressed the "X" key. When participants were finished with their design, they pressed the space bar to see which channel (Ch1 or Ch2) the antenna received. The channel label appeared in a text box with a green border located above the antenna.
 
-In the Passive training condition, participants were shown antennas with size and angles generated from the underlying category distributions. After a two second delay they were told which channel the antenna received. To ensure that participants saw the channel, they had to click on the channel text in order to advance the experiment. When they clicked the channel text, a green box appeared around the text to indicate that their response had been recorded.
+In the Passive condition, participants saw antennas generated randomly using the size and angle values taken from the underlying category distributions. After a two second delay they were told which channel the antenna received. The channel labels were deterministic, such that there was no noise in the classification input. To help ensure that participants actually saw the channel, they had to click on the text (Ch1 or Ch2) in order to advance the experiment. When they clicked, a green box appeared around the text to indicate that their response was recorded.
 
-After completing the training, participants in both conditions proceeded to the test trials. On each test trial participants saw an antenna and were asked, "Which channel does this antenna receive?" To indicate their response participants selected one of two buttons located above the antenna. At the end of each block of test trials, participants saw a summary of their accuracy on the preceding block.
+After training, participants proceeded to test trials. On each test trial participants saw one antenna and were asked, "Which channel does this antenna receive?" To indicate their response, participants selected one of two buttons (Ch1 or Ch2) located above the antenna. At the end of each block of test trials, participants saw a summary of their accuracy on the preceding block.
 
 ## Results and Discussion
 
-### Overall classification accuracy
+### Classification accuracy
 
-We directly followed the analysis plan of @markant2014better, using a t-test to compare overall test performance for participants in the active and the passive learning conditions. \footnote{All of our data, processing, and analysis code can be viewed in the version control repository for this paper at: https://github.com/kemacdonald/act-learn.} The left panel of Figure 2 shows overall test performance, with active learners being more accurate than passive learners, $t$(`r rep1a_t_test$parameter`) = `r round(rep1a_t_test$statistic, 2)`, $p$ = `r round(rep1a_t_test$p.value, 3)`. 
+```{r exp1a_t-test}
+rep1a_t_test <- t.test(mean_accuracy ~ condition_short, var.equal=TRUE, 
+                       data=filter(ss_rep, experiment == "replication_1a"))
 
-### Classification accuracy across blocks
+t.val.km <- rep1a_t_test$statistic
+cohens.d.km <- 0.73
+```
 
-```{r}
+First we report the planned replication analysis: a t-test to compare overall classification performance for participants in the active and passive conditions. Active learners were more accurate, $t$(`r rep1a_t_test$parameter`) = `r round(rep1a_t_test$statistic, 2)`, $p$ = `r round(rep1a_t_test$p.value, 3)`. Moreover, the effect size of the active learning advantage was large and greater than that of the original study (Original study: $d$ = 0.47; Replication: $d$ = `r cohens.d.km`).
+
+### Classification accuracy over time
+
+```{r mix_model_1a}
 mix_model_exp1a <- glmer(correct ~ condition * block + (1|subids), 
-            data=filter(df_rep,trial_type=="test"), family=binomial) 
+                         data=filter(df_rep,trial_type=="test"), family=binomial) 
 ```
 
-The right panel of Figure 2 shows participants' accuracies across blocks in the experiment. To quantify participants' behavior, we use mixed effects regression models with the maximal random effects structure justified by our experimental design: by-subject intercepts. We fit a logistic regression predicting test performance based on condition (active/passive) and block. The model was specified as \texttt{Correct $\sim$ 1 + Condition * Block + (1 | subject)}. We found a significant main effect of condition ($\beta$ = `r round(summary(mix_model_exp1a)$coef[2], 2)`, p < .001) with better performance for active learners, and a significant main effect of block ($\beta$ = `r round(summary(mix_model_exp1a)$coef[3], 2)`, p < .001) such that responses were more accurate later in the experiment.
+To quantify performance over time, we use mixed effects regression models with the maximal random effects structure justified by our experimental design: by-subject intercepts. We fit a logistic regression predicting test performance based on condition (active/passive) and block (1-6). We found a main effect of condition ($\beta$ = `r round(summary(mix_model_exp1a)$coef[2], 2)`, p < .001) with better performance for active learners overall, and a main effect of block ($\beta$ = `r round(summary(mix_model_exp1a)$coef[3], 2)`, p < .001) such that responses were more accurate later in the experiment. There was no interaction between block and condition. We did find an immediate advantage for active learning, which was not present in the original study.
 
-### Relationship between sampling behavior and learning
-
-```{r sampling-data}
-df_rep_all <- df %>% filter(condition =="AA", category_type == "Rule-Based")
-df_sampling_exp1 <- df %>% filter(condition == "AA", category_type == "Rule-Based", trial_type == "training")
-```
+### Relations between quality of active learning and accuracy
 
 ```{r avg_samp_dist_trials}
 df_sampling_exp1 <- mutate(df_sampling_exp1, 
-                      samp_dist_odb = ifelse(odb_scale == "orientation" & category_type == "Rule-Based", 
-                                             abs(as.numeric(odb_param) - orientation_response_param),
-                                             ifelse(odb_scale == "radius" & category_type == "Rule-Based", 
-                                                    abs(as.numeric(odb_param) - radius_response_param),
-                                                    abs(orientation_response_param - radius_response_param))))
+                           samp_dist_odb = ifelse(odb_scale == "orientation" & category_type == "Rule-Based", 
+                                                  abs(as.numeric(odb_param) - orientation_response_param),
+                                                  ifelse(odb_scale == "radius" & category_type == "Rule-Based", 
+                                                         abs(as.numeric(odb_param) - radius_response_param),
+                                                         abs(orientation_response_param - radius_response_param))))
 ```
 
 ```{r avg_samp_dist_subs}
@@ -280,22 +293,44 @@ ss_all_exp1 <- left_join(ss_all_exp1, ss_mean_acc_all_exp1,
 
 ```{r exp1a_sampling_mixed_model}
 lmodel_samp_exp1a <- lm(mean_accuracy ~ mean_samp_dist, 
-                             data=filter(ss_all_exp1, experiment == "replication_1a"))
+                        data=filter(ss_all_exp1, experiment == "replication_1a"))
 ```
 
-We were also interested in the relationship between participants' overall sampling behavior and learning outcomes. We follow @markant2014better and quantify the quality of a sample based on its orthogonal distance from the true category boundary, with samples closer to the boundary being of higher quality. For each participant, we computed a mean accuracy score and a mean sample distance score, and fit a linear model using sample distance to predict accuracy. We found a signficant effect of sample distance ($\beta$ = -.0003, p < .001) with accuracy increasing as mean sample distance decreased. 
+One important result from @markant2014better was the link between the quality of active learning and classification accuracy. Thus, we performed the same analysis on our replication data, quantifying the quality of evidence selection by computing the orthogonal distance between each sample and the true category boundary, with samples closer to the boundary being of higher quality. To test the relations between the quality of active learning and classification accuracy, we computed a mean accuracy score and a mean sample distance score for each participant, and fit a linear model using the mean sample distance score to predict accuracy. We found an effect of sample distance ($\beta$ = -.0003, p < .001) with accuracy increasing as the sample distance decreased.
 
-Taken together, our data provide strong evidence for a successful replication of the original results reported in @markant2014better. We found a comparable advantage in overall classification accuracy for active learners over receptive learners in a web-based experiment with two fewer training/test trial blocks. Our results differ from the original study in that we found an immediate advantage for active learners after the first block that was not present in the original study. Next we attempt to replicate @markant2014better's findings for the II category structure and for the yoked passive learning condition.
+Experiment 1a provides strong evidence for a successful replication of the original results reported in @markant2014better. We found a comparable advantage in accuracy for active learners and we found the same relationship between quality of evidence selection and learning outcomes. Our results differ slightly from the original study in that we found an immediate advantage for active learners in the first block. We next attempt to replicate @markant2014better's findings for the more complex Information-Integration category structure and for the yoked passive learning condition.
 
 # Experiment 1b
 
-The goals of Experiment 1b are to (a) replicate @markant2014better's findings for the more difficult Information-Integration (II) category structure, and (b) replicate the finding that passive learners did not benefit from being "yoked" to active learners' data.\footnote{Yoked designs are important because they help dissociate the effects of selection from the effects of seeing better data.} They did not find an active learning advantage for the II category structure and yoked learners were worse than active learners even though they had seen the exact same learning information. We used the same stimuli and followed the exact procedures as the original study (described below). However, we reduced the length of the experiment to two blocks. We made this decision based on finding an immediate active learning advantage in Experiment 1a.
+The goals of Experiment 1b were: (a) to replicate the lack of an active learning advantage for the more difficult Information-Integration (II) category structure, where the category boundary was defined by a linear combination of an antenna's size and central angle, and (b) to replicate the finding that passive learners did not benefit from being "yoked" to active learners' data. We also performed an internal replication of the active learning advantage for the RB category that we found in Experiment 1a. We used the same stimuli and followed the exact procedures as the original study. However, we reduced the length of the experiment to two blocks in order to increase our sample size and since we found an immediate active learning advantage in Experiment 1a.
 
+```{r rep1b-acc-plot, fig.env = "figure", fig.pos = "t", fig.width=3, fig.height=2, fig.align='left', fig.cap = "Overall accuracy performance for the Active, Passive, and Yoked training conditions for the Rule-Based (one dimension) and Information-Integration (two dimensions) category structures in Experiment 1b."}
+ms_rep_1b <- df_rep1b %>%
+    filter(trial_type == "test", understand != "No") %>%
+    group_by(condition_short, category_type) %>%
+    summarise(mean_accuracy = mean(correct),
+              ci_high = ci.high(correct),
+              ci_low = ci.low(correct))
 
-```{r rep1b-data}
-df_rep1b <- df %>% 
-    filter(experiment == "replication_1b", 
-           condition_short %in% c("A","R","Y")) 
+levels(ms_rep_1b$category_type) <- c("Rule-Based", "Info-Integration")
+levels(ms_rep_1b$condition_short) <- c("A", "RA", "AR", "P", "Y")
+
+ggplot(aes(x=condition_short, y=mean_accuracy), data=ms_rep_1b) + 
+    geom_bar(stat = "identity", aes(fill = condition_short)) + 
+    geom_linerange(aes(ymin=mean_accuracy - ci_low, 
+                       ymax=mean_accuracy + ci_high), 
+                   size=0.6,
+                   position=position_dodge(width=0.9)) + 
+    geom_hline(yintercept = 0.5, linetype = "dashed") +
+    facet_grid(.~category_type) +
+    coord_cartesian(ylim=c(0.4,1.0)) +
+    scale_fill_solarized() +
+    ylab("Mean Accuracy") +
+    xlab("Condition") +
+    facet_grid(.~category_type) +
+    theme(text = element_text(size=14)) +
+    guides(fill=F) +
+    theme_bw()
 ```
 
 ## Methods
@@ -324,218 +359,243 @@ nsubs_passive_rb_rep_1b <- demographics_replication_1b$count[5]
 nsubs_yoked_rb_rep_1b <- demographics_replication_1b$count[6]
 ```
 
-Participant recruitment and inclusionary/exclusionary criteria were identical to those of Experiment 1a (excluded `r dnu_exp1b` HITs). `r sum(demographics_replication_1b$count)` HITs were posted across each of the between-subjects conditions: two category structures (II and RB) and three training conditions (Active, Passive, and Yoked).
-
-```{r data-filter-1b}
-df_rep1b %<>% filter(understand != "No")
-```
+Participant recruitment and inclusionary/exclusionary criteria were identical to those of Experiment 1a (excluded `r dnu_exp1b$n` HITs). `r sum(demographics_replication_1b$count)` HITs were posted across each of the between-subjects conditions: two category structures (II and RB) and three training conditions (Active, Passive, and Yoked).
 
 ### Design and procedure
 
-Procedures were identical to those of Experiment 1a. We added a "yoked" learning condition, in which we match each passive learning participant with training data generated from an active learning participant's sampling behavior. Thus, both the active and yoked participants saw the exact same data, but the active participants were in control of the information flow.
+Procedures were identical to those of Experiment 1a, except that we included a "yoked" learning condition where we matched each passive learning participant with training data generated by an active learner. Thus, the active and yoked participants saw the exact same data, but active learners were in control of the information flow. We also reduced the length of the experiment to two blocks.
 
-## Results and Discussion
+```{r samp_acc_scatter_plot, fig.env = "figure", fig.pos = "t", fig.width=3.5, fig.height=2, fig.align='left', fig.cap = "The relations between quality of evidence selection and accuracy on test trials across blocks for participants in Experiments 1a and 1b. Each point is an individual participant. Note that higher mean sample distance means worse evidence selection. The blue lines are linear model fits."}
 
-### Overall classification accuracy
+ss_blocks_1_2 <- filter(ss_all_exp1, block %in% c(1, 2)) %>% 
+    mutate(block_string = ifelse(block == 1, "Block 1", "Block 2"))
 
-```{r rep1b-mean-acc}
-ms_rep_1b <- df_rep1b %>%
-    filter(trial_type == "test") %>%
-    group_by(condition_short, category_type) %>%
+ggplot(aes(x=mean_samp_dist, y=mean_accuracy_active_block), 
+       data = ss_blocks_1_2) +
+    geom_point(alpha = 0.4) +
+    geom_smooth(method="lm") +
+    facet_grid(.~block_string) +
+    xlab("Mean Sample Distance") +
+    ylab("Mean Accuracy") +
+    theme(text = element_text(size=12)) +
+    theme_bw()
+```
+
+```{r exp2_acc_plot, fig.env = "figure*", fig.pos = "t", fig.width=5, fig.height=2.3, fig.align='center', fig.cap = "Overall accuracy performance for the Passive-Active (PA) and Active-Passive (AP) conditions from Experiment 2 (darker bars) plotted with the Active-Active (AA) and Passive-Passive (PP) conditions from Experiment 1b (lighter bars)."}
+
+# overall acc
+ms_sequence_all <- df_sequence_rep %>%
+    filter(trial_type == "test", understand != "No") %>%
+    group_by(condition, category_type) %>%
     summarise(mean_accuracy = mean(correct),
               ci_high = ci.high(correct),
               ci_low = ci.low(correct))
-```
 
-```{r rep1b-acc-plot, fig.env = "figure", fig.pos = "t", fig.width=3.5, fig.height=2.3, fig.align='center', set.cap.width=T, num.cols.cap=1, fig.cap = "The left panel shows overall accuracy performance for the Active and Passive training conditions. The right panel shows participants' accuracy across both blocks in the experiment."}
+levels(ms_sequence_all$condition) <- c("AA", "PA", "AP", "PP", "YY")
+ms_sequence_all %<>% mutate(experiment = ifelse(condition %in% c("AA","PP"), 
+                                                "Experiment 1", "Experiment 2"))
 
-ggplot(aes(x=condition_short, y=mean_accuracy), data=ms_rep_1b) + 
-    geom_bar(stat = "identity", aes(fill = condition_short)) + 
+ggplot(aes(x=condition, y=mean_accuracy), data=ms_sequence_all) + 
+    geom_bar(stat = "identity", aes(fill = condition, alpha = experiment, color = experiment)) + 
     geom_linerange(aes(ymin=mean_accuracy - ci_low, 
                        ymax=mean_accuracy + ci_high), 
                    size=0.6,
                    position=position_dodge(width=0.9)) + 
     geom_hline(yintercept = 0.5, linetype = "dashed") +
     facet_grid(.~category_type) +
-    coord_cartesian(ylim=c(0.4,1.0)) +
+    coord_cartesian(ylim=c(0.6,0.9)) +
     scale_fill_solarized() +
+    scale_color_manual(values = c("white", "black")) +
+    scale_alpha_manual(values=c(0.6,1)) +
     ylab("Mean Accuracy") +
     xlab("Condition") +
-    facet_grid(.~category_type) +
     theme(text = element_text(size=16)) +
-    guides(fill=F) +
+    guides(fill=F, alpha=F ,color = F) +
     theme_bw()
-
 ```
+
+## Results and Discussion
+
+### Classification accuracy
 
 ```{r rep1b_mixed_model}
+df_rep1b %<>% mutate(condition = factor(condition))
+
 mixed_model_exp1b <- glmer(correct ~ condition * category_type + (1|subids), 
-            data=filter(df_rep1b, trial_type=="test"), 
-            nAGQ = 1,
-            control = glmerControl(optimizer = "bobyqa"),
-            family=binomial)
+                           data=filter(df_rep1b, trial_type=="test"), 
+                           nAGQ = 1,
+                           control = glmerControl(optimizer = "bobyqa"),
+                           family=binomial)
 ```
 
-Figure 3 shows the overall effect of category structure and training condition on participants' accuracy performance. We fit the same logistic regression as specified in Experiment 1a. We found a significant main effect of category structure ($\beta$ = `r round(summary(mixed_model_exp1b)$coef[4], 2)`, p < .001) with better performance in the RB category structure, and a significant main effect of condition ($\beta$ = `r round(summary(mix_model_exp1a)$coef[2], 2)`, p < .001) such that participants in the passive and yoked conditions performed worse than participants in the active condition. We did not find any significant interactions. 
+Figure 3 shows the effects of category structure and training condition on participants' overall accuracy. We fit the same logistic regression as specified in Experiment 1a and found a main effect of category ($\beta$ = `r round(summary(mixed_model_exp1b)$coef[4], 2)`, p < .001) with better performance in the RB category. We also found a main effect of condition ($\beta$ = `r round(summary(mix_model_exp1a)$coef[2], 2)`, p < .001) such that participants in the passive and yoked conditions performed worse than participants in the active condition. We did not find any reliable interactions. The finding of an active learning advantage for the II category differs from the results of the original study.
 
-### Relationship between sampling and test across blocks
+### Relations between evidence selections and accuracy over time
 
 ```{r exp1b_sampling_model}
 lmodel_sampling_all <- lm(mean_accuracy ~ mean_samp_dist * as.factor(block), 
-                             data=filter(ss_all_exp1, block %in% c(1,2)))
+                          data=filter(ss_all_exp1, block %in% c(1,2)))
 ```
 
-Since the main goal of this work was to test different sequences of active/passive learning, we were interested in exploring the relations between participants' sampling behavior and test accuracy *over time* in this task. To explore these relations, we performed an exploratory analysis where we fit a linear model predicting each participant's mean accuracy based on the quality of their sampling behavior and block. As expected participants' accuracy improved in the second block ($\beta$ = `r round(summary(lmodel_sampling_all)$coef[3], 2)`, p = `r round(summary(lmodel_sampling_all)$coef[3,4], 2)`). There was a significant two-way interaction between sampling distance and block ($\beta$ = -0.0013, p = `r round(summary(lmodel_sampling_all)$coef[3,4], 3)`) such that the relationship between quality of sampling and accuracy did not emerge until the second block. Figure 4 shows this interaction.
+Since the main goal of the current work was to test the effectiveness of different sequences of active/passive learning, we performed an exploratory analysis of the relations between sampling behavior and test accuracy over time for all active learners in Experiments 1a and 1b. We fit a linear model predicting each participant's mean accuracy based on the quality of their sampling behavior and experiment block. As expected, participants' accuracy improved in the second block ($\beta$ = `r round(summary(lmodel_sampling_all)$coef[3], 2)`, p = `r round(summary(lmodel_sampling_all)$coef[3,4], 2)`). Interestingly, there was a reliable two-way interaction between sample distance and block ($\beta$ = -0.0013, p = `r round(summary(lmodel_sampling_all)$coef[4,4], 3)`) such that the relationship between the quality of evidence selection and accuracy did not emerge until the second block (see Fig 5).
 
-TODO: quick recap and then transition to Experiment 2.
-
-```{r exp1_sampling-acc-plot, fig.env = "figure", fig.pos = "h", fig.width=3.5, fig.height=2.5, fig.align='center', set.cap.width=T, num.cols.cap=1, fig.cap = "The relations between quality of sampling and accuracy on test trials across blocks."}
-
-ggplot(aes(x=mean_samp_dist, y=mean_accuracy_active_block), 
-                 data = filter(ss_all_exp1, block %in% c(1, 2))) +
-    geom_point() +
-    geom_smooth(method="lm") +
-    facet_grid(.~block) +
-    xlab("Mean Sample Distance") +
-    ylab("Mean Accuracy") +
-    theme(text = element_text(size=16)) +
-    theme_bw()
-
-```
+Experiment 1b provides additional evidence for a successful replication of the original results reported in @markant2014better. Importantly, yoked learners performed worse than active learners even though they had seen the same training data, suggesting that the link between people's hypotheses and the input is an important contributor to the active learning advantage. We did find that active learners performed better than both passive and yoked learners in the more complex II category structure. This advantage was not found in the original study, but the smaller size of the advantage in the II condition is consistent with @markant2014better's general conclusion - namely, that learners’ expectations may modulate the degree of benefit from active learning. Finally, we found evidence that the link between sampling behavior and learning changes as people gain more experience with the learning task -- an effect that we set out to test in Experiment 2.
 
 # Experiment 2
 
-TODO: introduce experiment 2.
-
-```{r seq-data}
-df_sequence <- df %>% filter(block == 1 | block == 2,
-                             experiment == "sequence",
-                             condition %in% c("RA", "AR"))
-
-df_sequence_rep <- df %>% filter(block == 1 | block == 2,
-                             condition %in% c("RA", "AR", "RR", "AA"))
-```
+Direct comparisons of active and passive learning are important for understanding when and why we might see advantages for one type of learning over the other. But real-world contexts are not neatly divided into active learning and passive learning. So when are different kinds of learning better for different kinds of learning problems? Experiment 2 provides a direct test of different predictions about the effects of different sequences of active/passive training in an abstract category learning task. Is active-first learning better because it makes people to engage more deeply with the task, enhancing their subsequent passive learning? Or is passive-first training better because it enhances later active learning?
 
 ## Methods
 
 ### Stimuli
+
 Stimuli were identical to Experiment 1.  
 
 ### Participants
 
-```{r seq-participants}
+```{r participants-seq}
 demographics_sequence <- df_sequence %>% 
     distinct(subids) %>% 
     xtabs(formula = ~ condition_long + category_type_string) %>% 
     as.data.frame() %>% 
     rename(count = Freq)
 
-dnu_sequence <- df_sequence %>% distinct(subids) %>% 
+dnu_sequence <- df_sequence %>% 
+    distinct(subids) %>% 
     count(understand) %>% 
     filter(understand == "No")
-
-# get num subs in each condition
-nsubs_ar_ii <- demographics_sequence$count[1]
-nsubs_ra_ii <- demographics_sequence$count[2]
-
-nsubs_ar_rb <- demographics_sequence$count[3]
-nsubs_ra_rb <- demographics_sequence$count[4]
 ```
 
-Participant recruitment and inclusionary/exclusionary criteria were identical to those of Experiment 1 (`r dnu_sequence` HITs). Approximately 44 HITs were posted for each condition for total of `r sum(demographics_sequence$count)` paid HITs.
-
-```{r seq-data-filter}
-df_sequence <- df_sequence %>% filter(understand != "No")
-df_sequence_rep <- df_sequence_rep %>% filter(understand != "No")
-```
+Participant recruitment and inclusionary/exclusionary criteria were identical to those of Experiment 1 (`r dnu_sequence$n` HITs). Approximately 44 HITs were posted for each condition for total of `r sum(demographics_sequence$count)` paid HITs.
 
 ### Design and procedure
 
-Procedures were identical to those of Experiment 1. Participants were randomly assigned to one the two between-subjects conditions: Active-Receptive (AR) vs. Receptive-Active (RA). In the AR condition, participants completed a block of active learning then proceeded to a block of passive learning. In the RA condition, the order of the blocks was flipped. 
+Procedures were identical to those of Experiment 1. Participants were randomly assigned to one the two between-subjects conditions: Active-Passive (AP) vs. Passive-Active (PA). In the AP condition, participants completed a block of active training and test trials before proceeding to a block of passive learning and test trials. In the PA condition, the order of the training/test blocks was reversed with passive training coming first. 
 
 ## Results and Discussion
 
-```{r seq-acc-computation}
-# overall acc
-ms_sequence_all <- df_sequence_rep %>%
-    filter(trial_type == "test") %>%
-    group_by(condition, category_type) %>%
-    summarise(mean_accuracy = mean(correct),
-              ci_high = ci.high(correct),
-              ci_low = ci.low(correct))
-```
+First, we present analyses of classification accuracy and sampling behavior, focusing on just the AP and PA conditions. The key test of our hypothesis is the interaction between training condition and experiment block, since this tests the effect of training condition on improvement in classification accuracy. We then compare performance in the AP and PA conditions to performance from the Active-Active (AA) and Passive-Passive (PP) conditions from Experiments 1a and 1b, which allows for comparisons to training regimes where learners did not have to switch between types of learning.
 
-```{r exp2_acc_plot, fig.env = "figure*", fig.pos = "t", fig.width=5, fig.height=3, fig.align='center', set.cap.width=T, num.cols.cap=2, fig.cap = "The left panel shows accuracy performance across both blocks for the different sequence of active/passive training. The right panel shows overall accuracy performance plotted with the active-active and receptive-receptive data from Experiment 1."}
-
-ggplot(aes(x=condition, y=mean_accuracy), data=ms_sequence_all) + 
-    geom_bar(stat = "identity", aes(fill = condition)) + 
-    geom_linerange(aes(ymin=mean_accuracy - ci_low, 
-                       ymax=mean_accuracy + ci_high), 
-                   size=0.6,
-                   position=position_dodge(width=0.9)) + 
-    facet_grid(.~category_type) +
-    coord_cartesian(ylim=c(0.5,0.9)) +
-    scale_fill_solarized() +
-    ylab("Mean Accuracy") +
-    xlab("Condition") +
-    theme(text = element_text(size=16)) +
-    guides(fill=F) +
-    theme_bw()
-```
+### Classification accuracy
 
 ```{r mixed-model-seq}
 mixed_model_seq <- glmer(correct ~ condition * category_type * block + (1|subids), 
-                              data=filter(df_sequence, trial_type=="test"), 
-                              nAGQ = 0,
-                              control = glmerControl(optimizer = "bobyqa"),
-                              family=binomial)
+                         data=filter(df_sequence, trial_type=="test", understand != "No"), 
+                         nAGQ = 1,
+                         control = glmerControl(optimizer = "bobyqa"),
+                         family=binomial)
 ```
+
+Which sequence of active and passive learning was best? We fit a logistic regression predicting test performance based on condition (PA vs. AP), block (1 vs. 2), and category type (RB vs. II). We found a main effect of block ($\beta$ = `r round(summary(mixed_model_seq)$coef[4], 2)`, p < .001), with better performance in the second block across all conditions. For the key test of our hypothesis, we found a highly reliable two-way interaction between training condition and block ($\beta$ = `r round(summary(mixed_model_seq)$coef[6], 2)`, p < .001), such that participants in the PA condition showed more learning over time compared to the AP condition. We also found a reliable two-way interaction between category type and block ($\beta$ = `r round(summary(mixed_model_seq)$coef[7], 2)`, p < .001) and a marginally significant three-way interaction between condition, category type, and block ($\beta$ = `r round(summary(mixed_model_seq)$coef[8], 2)`, $p$ = `r round(summary(mixed_model_seq)$coef[8,4], 2)`). Participants showed less of an increase in accuracy for the more complex II category, and there was less of an advantage for the PA training condition in the II category.
+
+### Quality of evidence selection
+
+```{r sampling-behavior-seq}
+df_sampling_seq <- df_sequence %>% 
+    filter(trial_type == "training", condition %in% c("RA", "AR"), understand != "No",
+           block == 1 | block == 2) %>% 
+    dplyr::select(subids, block, trial_type, condition, 
+                  odb_scale, radius_response_param, orientation_response_param,
+                  trial_category, order, odb_param, category_type)
+
+df_sampling_seq %<>% mutate(trial_training_block = ifelse(condition == "AR" & block == 1, "Active",
+                                                          ifelse(condition == "RA" & block == 2, "Active",
+                                                                 ifelse(condition == "AA", "Active",
+                                                                        "Receptive"))))
+
+df_sampling_seq %<>% filter(trial_training_block == "Active")
+
+df_sampling_seq <- mutate(df_sampling_seq, 
+                          samp_dist_odb = ifelse(odb_scale == "orientation" & category_type == "Rule-Based", 
+                                                 abs(as.numeric(odb_param) - orientation_response_param),
+                                                 ifelse(odb_scale == "radius" & category_type == "Rule-Based", 
+                                                        abs(as.numeric(odb_param) - radius_response_param),
+                                                        abs(orientation_response_param - radius_response_param))))
+
+ss_samp_dist_seq <- df_sampling_seq %>%
+    filter(trial_training_block == "Active", block == 1 | block == 2) %>%
+    group_by(subids, condition, block, category_type) %>%
+    summarise(mean_samp_dist = mean(samp_dist_odb))
+
+ss_mean_acc_active_block_seq <- df_sequence %>%
+    filter(trial_training_block == "active", trial_type == "test", block == 1 | block == 2) %>%
+    group_by(subids, condition, block, category_type) %>%
+    summarise(mean_accuracy_active_block = mean(correct))
+
+ss_mean_acc_all_seq <- df_sequence %>%
+    filter(trial_type == "test", block == 1 | block == 2) %>%
+    group_by(subids, condition, category_type) %>%
+    summarise(mean_accuracy = mean(correct))
+
+# join sampling and test acc together
+ss_all_seq <- left_join(ss_samp_dist_seq, ss_mean_acc_active_block_seq, 
+                        by=c("subids", "condition", "block", "category_type"))
+
+ss_all_seq <- left_join(ss_all_seq, ss_mean_acc_all_seq, 
+                        by=c("subids", "condition", "category_type"))
+```
+
+```{r sampling-models-seq}
+samp_acc_model_seq <- lm(mean_accuracy ~ mean_samp_dist * condition * category_type, data=ss_all_seq)
+samp_cond_model_seq <- lmer(samp_dist_odb ~ condition * category_type + (1|subids), data=df_sampling_seq)
+```
+
+To test which condition produced higher quality sampling behavior, we fit a linear mixed model predicting sample quality as a function of condition and category type. We found that PA learners generated better samples than AP learners ($\beta$ = `r round(summary(samp_cond_model_seq)$coef[2], 2)`, $t$ = `r round(summary(samp_cond_model_seq)$coef[2,3], 2)`), and we found that sampling quality was lower in the II category ($\beta$ = `r round(summary(samp_cond_model_seq)$coef[3], 2)`, $t$ = `r round(summary(samp_cond_model_seq)$coef[3,3], 2)`). We also we fit a linear model predicting mean classification accuracy based on the mean distance of samples from the target category boundary, and replicate the finding from Experiments 1a and 1b: that higher quality sampling was related to higher accuracy scores ($\beta$ = `r round(summary(samp_acc_model_seq)$coef[2], 4)`, $p$ = `r round(summary(samp_acc_model_seq)$coef[2,4], 2)`). 
+
+### Classification accuracy for all sequences
 
 ```{r mixed-model-seq-full}
 # effect code (choose contrasts based on how you want to interpret model output)
 df_sequence_rep %<>% mutate(category_type = factor(category_type),
-               condition = factor(condition),
-               block_factor = factor(block))
+                            condition = factor(condition),
+                            block_factor = factor(block))
 
 contrasts(df_sequence_rep$category_type) <- cbind("base=rb" = c(1, -1))
 contrasts(df_sequence_rep$block_factor) <- cbind("base=block1" = c(-1, 1))
 contrasts(df_sequence_rep$condition) <- cbind("active_vs_passive" = c(1, 1, 1, -3), 
                                               "active2_vs_active1" = c(2, -1, -1, -0),
-                                              "ra_vs_ar" = c(0, 1, -1, 0))
+                                              "ra_vs_ar" = c(0, -1, 1, 0))
 
-mixed_model_seq_full <- glmer(correct ~ condition * category_type * block + (1|subids), 
+mixed_model_seq_full <- glmer(correct ~ condition * category_type + (1|subids), 
                               data=filter(df_sequence_rep, trial_type=="test"), 
                               nAGQ = 0,
                               control = glmerControl(optimizer = "bobyqa"),
                               family=binomial)
 ```
 
-Intercept is the mean of the means (or the grand mean) of all the groups. These data are unbalanced.
-Active better than passive. Information integration worse than rule-based.
+How does learning from different sequences of active/passive learning compare to learning from only active or passive data? We fit a logistic regression predicting test performance with the same specifications, but we included data from the active and passive learning conditions in Experiment 1b and coded user-defined contrasts to test classification accuracy for specific comparisons of interest. We found that receiving any active learning (AA, PA, AP) was better than receiving only passive learning (PP) ($\beta$ = `r round(summary(mixed_model_seq_full)$coef[2], 2)`, $p$ < .001), and that completing two blocks of active learning (AA) was better than completing one block of active learning (PA or AP) ($\beta$ = `r round(summary(mixed_model_seq_full)$coef[3], 2)`, $p$ = `r round(summary(mixed_model_seq_full)$coef[3,4], 2)`). 
+
+### Time costs associated with different learning sequences
+
+```{r training_time_model}
+df_train_time <- df %>% 
+    filter(trial_type == "training", 
+           condition %in% c("AA", "RA", "AR", "RR"), 
+           block %in% c(1, 2)) %>% 
+    mutate(condition = factor(condition))
+    
+contrasts(df_train_time$condition) <- cbind("active_vs_passive" = c(1, 1, 1, -3), 
+                                              "active2_vs_active1" = c(2, -1, -1, -0),
+                                              "ra_vs_ar" = c(0, -1, 1, 0))
+
+train_time_lmer <- lmer(rt ~ condition * category_type + (1|subids), data = df_train_time)
+```
+
+We were also interested in the time costs associated with different sequences of active and passive learning. We fit a linear mixed effects model with the same specifications but predicting the amount of time spent on each training trial. We found that training took longer in any active learning condition compared to passive learning ($\beta$ = `r round(summary(train_time_lmer)$coef[2], 2)`, $t$ = `r round(summary(train_time_lmer)$coef[2,3], 2)`). We also found that people who completed only active training (AA) took longer than people who only completed one block of active learning (PA, AP) ($\beta$ = `r round(summary(train_time_lmer)$coef[3], 2)`, $t$ = `r round(summary(train_time_lmer)$coef[3,3], 2)`). Surprisingly, we found that people in the active-first condition (AP) took longer than people in the passive-first condition (PA) ($\beta$ = `r round(summary(train_time_lmer)$coef[4], 2)`, $t$ = `r round(summary(train_time_lmer)$coef[4,3], 2)`). We did not find any reliable interactions.  
+
+The main findings from Experiment 2 are that despite experiencing the exact same amount of active and passive data, passive-first learners were more accurate overall, produced higher quality sampling behavior, and spent less time on training. These results suggests that receiving passive training first might have improved learners' active learning by helping them to explore more efficiently.
 
 # General Discussion
 
-* Recap findings
-    * Active learning advantage in a direct replication 
-    * Passive-active better than Active-passive
-    * Conceptual replication
-    
-* Expand on why we see AR > RA
-    * Sequential hypothesis testing model 
-    * Gain some understanding of task before exploring
-    * RA is bad because you can't refine your current hypothesis. Can only use the data you are given
-    to confirm/reject current hypothesis
-    
-    
-Moreover, there are markedly different costs associated with active compared to passive learning, with active learning requiring more effort and time on the part of the learner. Thus, understanding how different sequences of active/passive learning interact to affect learning outcomes is an important question for both theoretical and applied reasons.  
+Mixtures of active and passive learning are a fundamental feature of real-world learning contexts. But which sequences of active/passive input are best for different kinds of learning problems? In the current work, we take a first step towards answering this important question. We found that that receiving passive learning first improved subsequent active exploration and led to better overall performance in an abstract concept learning task. This finding increases our understanding of the types of learning problems where passive learning might support effective active learning.
 
+Why was passive-first learning better in this kind of abstract concept learning problem? One possibility is passive training allowed people to generate hypotheses about the correct category boundary, which they could begin testing from the very first trial of active learning. We did find that passive-first learners produced higher quality active learning, suggesting that perhaps active-first learners used their initial active learning less effectively. In contrast, we did not see active learning strategies transfer to passive learning, as had been found previously [@kachergis2013actively]. Perhaps we did not see transfer because this task involved incremental changes to hypotheses, which depend on generating the right example to falsify the learner's current hypothesis on a trial by trial basis. In contrast, if active learning helps learners develop better attentional/memory strategies, these strategies can often be transferred to passive contexts.
 
-* Limitations
-    * AA was always best
-    * task analysis 
-    * complexity of real world learning
-    
-* Takeaway point: 
+It is interesting that two blocks of active learning was slightly better than the passive-first learning. But, passive-first learning provides an additional benefit: it reduces learning costs (i.e., time and mental effort). We found that active learners took longer to complete the task and spent more time on the training blocks. Thus, even if passive-first learning does not achieve the same level of performance as active learning, it still might be preferable. 
+
+There are several limitations to our experiment. First, while the learning task we used is well-understood, like other tasks of this type it dramatically simplifies real-world concept learning. So we do not know how our sequencing finding would scale to learning more complex, higher dimensional concepts. It could be that passive learning becomes even more important as the concept becomes more complex. Second, we used a coarse sequence manipulation, at the level of training/test blocks. And sequences of active/passive learning might have differential effects on learning at finer levels of granularity (e.g., trial level).
+
+We need a theory of what kinds of learning work best for the diverse set of problems that learners must solve. Our work here provides an important first step towards understanding when passive learning experiences could be used to support better active exploration. Overall, these results show that, for some tasks, passive learning can equip people with a better task representation, making them more effective active learners. 
 
 # Acknowledgements
 

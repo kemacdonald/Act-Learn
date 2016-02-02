@@ -97,7 +97,7 @@ qplot(exp_length_min, data=ss_rt, facets=experiment~condition)
 ## Experiment 1: Replication
 
 ```{r}
-df_rep <- df %>% filter(experiment == "replication")
+df_rep <- df %>% filter(experiment == "replication_1a")
 ```
 
 ### Mean accuracy analysis 
@@ -109,11 +109,8 @@ ms_rep <- df_rep %>%
     summarise(mean_accuracy = mean(correct),
               ci_high = ci.high(correct),
               ci_low = ci.low(correct))
-```
 
-Plot
 
-```{r}
 ggplot(aes(x=condition, y=mean_accuracy), data=ms_rep) + 
     geom_bar(stat = "identity", aes(fill = condition)) + 
     geom_linerange(aes(ymin=mean_accuracy - ci_low, 
@@ -140,11 +137,7 @@ ms_rep_block <- df_rep %>%
     summarise(mean_accuracy = mean(correct, na.rm=T),
               ci_high = ci.high(correct),
               ci_low = ci.low(correct))
-```
 
-Plot
-
-```{r}
 block_plot_exp1 <- ggplot(aes(x=block, y=mean_accuracy, color = condition), 
                           data=filter(ms_rep_block, category_type == "Rule-Based")) +
     geom_pointrange(aes(ymin=mean_accuracy - ci_low, 
@@ -169,31 +162,72 @@ direct.label(block_plot_exp1, list(last.bumpup, hjust = -0.5))
 ### Confidence analysis
 
 ```{r}
-df_rep %>%
+ms_conf <- df_rep %>%
     filter(trial_type == "test", confidence != is.na(confidence)) %>%
-    mutate(conf_level = cut(confidence, 4)) %>%
+    mutate(conf_level = cut(confidence, 4, 
+                            labels = c("0%-25%", "25%-50%", "50%-75%", "75%-100%"))) %>%
     group_by(condition, conf_level) %>%
     summarise(mean_correct = mean(correct), 
               ci_high = ci.high(correct),
-              ci_low = ci.low(correct)) %>%
-    ggplot(aes(x = conf_level, y = mean_correct, col = condition, group = condition)) +
-    geom_pointrange(aes(ymin=mean_correct - ci_low, 
-                        ymax=mean_correct + ci_high,
-                        color = condition), 
-                    size=0.6) +
-    geom_smooth(se=F, method = "loess") + 
-    scale_x_discrete() +
-    scale_color_solarized() +
-    xlab("Binned Confidence Level") +
-    ylab("Mean Proportion Correct") +
-    theme(text = element_text(size=16))
+              ci_low = ci.low(correct))
+
+ss_conf <- df_rep %>%
+    filter(trial_type == "test", confidence != is.na(confidence)) %>%
+    mutate(conf_level = cut(confidence, 4, 
+                            labels = c("0%-25%", "25%-50%", "50%-75%", "75%-100%")))
 
 ```
 
-### Relationship between evidence selection and test over time
+```{r}
+levels(ms_conf$condition) <- c("A", "AP", "PA", "P", "Y")
+
+conf_plot1 <- ggplot(aes(x = conf_level, y = mean_correct, col = condition, group = condition),
+                    data = ms_conf) +
+    geom_pointrange(aes(ymin=mean_correct - ci_low, 
+                        ymax=mean_correct + ci_high,
+                        color = condition), 
+                    size=0.6, position=position_jitter(width=0.1)) +
+    stat_smooth(method = "lm", formula = y ~ poly(x, 2), se = F) +
+    scale_x_discrete() +
+    scale_color_solarized() +
+    xlab("Binned Confidence Rating") +
+    ylab("Mean Proportion Correct") +
+    theme(text = element_text(size=12)) 
+
+conf_plot1 <- direct.label(conf_plot1, list(last.bumpup, hjust = -0.8))
+
+conf_density <- ggplot(aes(x = confidence, fill = condition), data = ss_conf) +
+    geom_density(alpha = 0.5, adjust=3) +
+    scale_fill_solarized() +
+    xlab("Confidence") +
+    ylab("Density") +
+    guides(fill=F) +
+    theme_classic()
+
+gridExtra::grid.arrange(conf_density, conf_plot1, ncol=1, heights=c(1.5,3))
+
+```
 
 ```{r}
-#TODO
+conf_df <- filter(df_rep, trial_type == "test", confidence != is.na(confidence)) %>% 
+    mutate(correct = ifelse(correct == T, 1, 0))
+
+conf_glm <- glm(correct ~ confidence * condition, 
+                data = conf_df,
+                family = binomial)
+
+conf_df$preds <- predict(conf_glm, conf_df, type="response")
+
+conf_plot <- ggplot(aes(x = confidence, y = correct, col = condition, group = condition),
+       data = conf_df) +
+    geom_point(position=position_jitter(height=0.05)) +
+    geom_line(aes(y=preds), data = conf_df, size = 1) +
+    scale_color_solarized() +
+    xlab("Confidence") +
+    ylab("Correct") +
+    theme(text = element_text(size=16))
+
+direct.label(conf_plot, list(last.bumpup, hjust = -0.5))
 ```
 
 ## Experiment 2: Sequence 
@@ -329,7 +363,7 @@ block_plot2_sequence <- ggplot(aes(x=block_factor, y=mean_accuracy, color = cond
 direct.label(block_plot2_sequence, list(last.bumpup, hjust = -0.5))
 ```
 
-For the category that depends on size, AA and RA end up on top of each other, whereas AR and RR do not. I'm not sure what's going on with the "angle" category -- Perhaps this is just easier to learn overall and so we are not seeing any condtion differences? 
+For the category that depends on size, AA and RA end up on top of each other, whereas AR and RR do not. I'm not sure what's going on with the "angle" category -- Perhaps this is just easier to learn overall and so we are not seeing any condition differences? 
 
 Also, there seems to be some between subjects variation here -- could this explain why the RR learners are the best in the angle category? Should we try to replicate this order difference?
 
@@ -457,23 +491,17 @@ Get the mean sample distance and accuracy for each participant.
 ss_samp_dist_exp1 <- df_sampling_exp1 %>%
     filter(trial_training_block == "Active", block == 1 | block == 2) %>%
     group_by(subids, condition, block, category_type) %>%
-    summarise(mean_samp_dist = mean(samp_dist_odb),
-              ci_high_msd = ci.high(samp_dist_odb),
-              ci_low_msd = ci.low(samp_dist_odb))
+    summarise(mean_samp_dist = mean(samp_dist_odb))
 
-ss_mean_acc_active_block_exp1 <- df_exp1 %>%
+ss_mean_acc_active_block_exp1 <- df_sequence %>%
     filter(trial_training_block == "active", trial_type == "test", block == 1 | block == 2) %>%
     group_by(subids, condition, block, category_type) %>%
-    summarise(mean_accuracy_active_block = mean(correct),
-              ci_high_acc_active_block = ci.high(correct),
-              ci_low_acc_active_block = ci.low(correct))
+    summarise(mean_accuracy_active_block = mean(correct))
 
 ss_mean_acc_all_exp1 <- df %>%
     filter(trial_type == "test", block == 1 | block == 2) %>%
     group_by(subids, condition, category_type) %>%
-    summarise(mean_accuracy = mean(correct),
-              ci_high_acc = ci.high(correct),
-              ci_low_acc = ci.low(correct))
+    summarise(mean_accuracy = mean(correct))
 
 # join sampling and test acc together
 ss_all_exp1 <- left_join(ss_samp_dist_exp1, ss_mean_acc_active_block_exp1, 
@@ -556,12 +584,12 @@ Reliable interaction between condition and block. Receptive-first learners perfo
 
 But overall, the two groups are not different from one another. How to interpret? 
 
-### Accuracy based on sampling behavior and condition
+### Accuracy based on sampling behavior and condition and category type
 
 Does mean accuracy depend on sampling behavior and condition?
 
 ```{r, eval = F}
-m2_exp1 <- lm(mean_accuracy ~ mean_samp_dist * condition, data=ss_all_exp1)
+m2_exp1 <- lm(mean_accuracy ~ mean_samp_dist * condition * category_type, data=filter(ss_all_exp1, condition != "AA"))
 
 summary(m2_exp1)
 ```
@@ -573,7 +601,7 @@ Reliable interaction between mean sample distance and condition. If you get Rece
 Which condition is "better" at sampling?
 
 ```{r, eval = F}
-m3_samp_exp1 <- lmer(samp_dist_odb ~ condition + (1|subids), data=df_sampling_exp1)
+m3_samp_exp1 <- lmer(samp_dist_odb ~ condition * category_type + (1|subids), data=filter(df_sampling_exp1, condition != "AA"))
 
 summary(m3_samp_exp1)
 ```
@@ -615,7 +643,7 @@ Active better than passive. Information integration worse than rule-based.
 
 ## Experiment 3: Manipulate learner's prior hypothesis 
 
-Here we directly manipulate the match/mismatch between task framing and category type (1D category X 2D category). This tests the importance of the learner's prior hypohtesis for the effectiveness of active learning. This experiment can also help us understand how a learner revises their active learning when the data doesn't match their hypothesis.
+Here we directly manipulate the match/mismatch between task framing and category type (1D category X 2D category). This tests the importance of the learner's prior hypothesis for the effectiveness of active learning. This experiment can also help us understand how a learner revises their active learning when the data doesn't match their hypothesis.
 
 ```{r}
 df_prior <- filter(df, experiment == "prior-manipulation") %>% 
