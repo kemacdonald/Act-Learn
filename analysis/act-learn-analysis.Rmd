@@ -145,9 +145,9 @@ block_plot_exp1 <- ggplot(aes(x=block, y=mean_accuracy, color = condition),
                         color = condition), 
                     size=0.6) +
     geom_hline(yintercept = 0.5, linetype = "dashed") +
-    geom_smooth(data = filter(ms_rep_block, category_type == "Rule-Based"), method = "loess", se=F) +
+    geom_smooth(data = filter(ms_rep_block, category_type == "Rule-Based"), method = "lm", se=F) +
     facet_grid(.~category_type) +
-    scale_x_discrete() +
+    xlim(1, 6.5) + 
     scale_y_continuous(limits=c(0.4,1.0)) +
     scale_color_solarized() +
     ylab("Mean Accuracy") +
@@ -179,7 +179,7 @@ ss_conf <- df_rep %>%
 ```
 
 ```{r}
-levels(ms_conf$condition) <- c("A", "AP", "PA", "P", "Y")
+xlevels(ms_conf$condition) <- c("A", "AP", "PA", "P", "Y")
 
 conf_plot1 <- ggplot(aes(x = conf_level, y = mean_correct, col = condition, group = condition),
                     data = ms_conf) +
@@ -192,7 +192,7 @@ conf_plot1 <- ggplot(aes(x = conf_level, y = mean_correct, col = condition, grou
     scale_color_solarized() +
     xlab("Binned Confidence Rating") +
     ylab("Mean Proportion Correct") +
-    theme(text = element_text(size=12)) 
+    theme(text = element_text(size=20)) 
 
 conf_plot1 <- direct.label(conf_plot1, list(last.bumpup, hjust = -0.8))
 
@@ -205,29 +205,6 @@ conf_density <- ggplot(aes(x = confidence, fill = condition), data = ss_conf) +
     theme_classic()
 
 gridExtra::grid.arrange(conf_density, conf_plot1, ncol=1, heights=c(1.5,3))
-
-```
-
-```{r}
-conf_df <- filter(df_rep, trial_type == "test", confidence != is.na(confidence)) %>% 
-    mutate(correct = ifelse(correct == T, 1, 0))
-
-conf_glm <- glm(correct ~ confidence * condition, 
-                data = conf_df,
-                family = binomial)
-
-conf_df$preds <- predict(conf_glm, conf_df, type="response")
-
-conf_plot <- ggplot(aes(x = confidence, y = correct, col = condition, group = condition),
-       data = conf_df) +
-    geom_point(position=position_jitter(height=0.05)) +
-    geom_line(aes(y=preds), data = conf_df, size = 1) +
-    scale_color_solarized() +
-    xlab("Confidence") +
-    ylab("Correct") +
-    theme(text = element_text(size=16))
-
-direct.label(conf_plot, list(last.bumpup, hjust = -0.5))
 ```
 
 ## Experiment 2: Sequence 
@@ -264,7 +241,6 @@ ggplot(aes(x=condition, y=mean_accuracy), data=ms_sequence) +
     ylab("Mean Accuracy") +
     xlab("Condition") +
     facet_grid(.~category_type) +
-    theme(text = element_text(size=16)) +
     guides(fill=F) +
     theme_bw()
 ```
@@ -277,7 +253,7 @@ Next, we analyze accuracy across the two blocks.
 
 ```{r acc by block, echo=F}
 ms_block_sequence <- df_sequence %>%
-    filter(trial_type == "test") %>%
+    filter(trial_type == "test", condition %in% c("RA", "AR")) %>%
     group_by(condition, block, category_type) %>%
     summarise(mean_accuracy = mean(correct),
               ci_high = ci.high(correct),
@@ -285,22 +261,18 @@ ms_block_sequence <- df_sequence %>%
 ```
 
 ```{r acc by block plot, echo=F}
-block_plot_exp1 <- ggplot(aes(x=block, y=mean_accuracy), data=ms_block_sequence) +
-    geom_pointrange(aes(ymin=mean_accuracy - ci_low, 
-                        ymax=mean_accuracy + ci_high,
-                        color = condition), 
-                    size=0.6) +
+block_plot_exp1 <- ggplot(aes(x=as.factor(block), y=mean_accuracy, color = condition), data=ms_block_sequence) +
+    geom_pointrange(aes(ymin=mean_accuracy - ci_low, ymax=mean_accuracy + ci_high), size=0.6) +
     geom_hline(yintercept = 0.5, linetype = "dashed") +
+    geom_line(aes(group = condition), data = ms_block_sequence) +
     geom_smooth(aes(color = condition), method = "lm", se=F) +
     facet_grid(.~category_type) +
-    scale_x_discrete() +
-    scale_y_continuous(limits=c(0.4,0.9)) +
+    scale_y_continuous(limits=c(0.5,0.9)) +
     scale_color_solarized() +
     ylab("Mean Accuracy") +
     xlab("Block") +
     guides(color = F) +
-    theme(text = element_text(size=16)) +
-    theme_bw()
+    theme(text = element_text(size=22)) 
 
 direct.label(block_plot_exp1, list(last.bumpup, hjust = -0.5))
 ```
@@ -345,20 +317,19 @@ ms_block_order_sequence <- df_sequence %>%
 ### Rule-Based category structure
 
 ```{r acc by block and dim plot, echo=F}
-block_plot2_sequence <- ggplot(aes(x=block_factor, y=mean_accuracy, color = condition, group = condition), 
+block_plot2_sequence <- ggplot(aes(x=as.factor(block_factor), y=mean_accuracy, color = condition, group = condition), 
        data = filter(ms_block_order_sequence, category_type == "Rule-Based")) +
     geom_point() +
     geom_smooth(aes(color = condition), method = "lm", se=F) +
     geom_hline(yintercept = 0.5, linetype = "dashed") +
     geom_linerange(aes(ymin=mean_accuracy - ci_low, ymax=mean_accuracy + ci_high), size=0.6) + 
     facet_grid(.~order_rule_based) +
+    scale_y_continuous(limits=c(0.5,0.95)) +
     scale_color_solarized() +
-    scale_y_continuous(limits=c(0.4,1)) +
-    scale_x_discrete() +
     ylab("Mean Accuracy") +
     xlab("Block") +
-    theme_bw() +
-    theme(text = element_text(size=16)) 
+    guides(color = F) +
+    theme(text = element_text(size=22)) 
     
 direct.label(block_plot2_sequence, list(last.bumpup, hjust = -0.5))
 ```
@@ -459,7 +430,7 @@ Now get the average distance across subjects
 
 ```{r}
 ms_sampling_exp1 <- df_sampling_exp1 %>%
-    group_by(condition, block, category_type) %>%
+    group_by(condition, category_type) %>%
     summarize(mean_samp_dist = mean(samp_dist_odb, na.rm = T),
               ci_high = ci.high(samp_dist_odb),
               ci_low = ci.low(samp_dist_odb))
@@ -476,9 +447,9 @@ ggplot(aes(x=condition, y=mean_samp_dist, fill = condition), data=ms_sampling_ex
     coord_cartesian(ylim=c(100, 275)) +
     ylab("Mean Sample Distance") +
     xlab("Condition") +
-    facet_grid(category_type~block) +
-    theme(text = element_text(size=16)) +
-    theme_bw()
+    facet_grid(.~category_type) +
+    guides(fill = F) +
+    theme(text = element_text(size=22)) 
 ```
 
 Active learning is better after getting a block of receptive learning trials. But not better than getting two blocks of Active learning trials.
@@ -681,14 +652,13 @@ ggplot(aes(x=condition, y=mean_accuracy), data=ms_prior) +
                    size=0.6,
                    position=position_dodge(width=0.9)) + 
     facet_grid(.~category_type) +
-    coord_cartesian(ylim=c(0.6,0.9)) +
+    coord_cartesian(ylim=c(0.6,0.85)) +
     scale_fill_solarized() +
     ylab("Mean Accuracy") +
     xlab("Condition") +
     facet_grid(.~category_type) +
-    theme(text = element_text(size=16)) +
     guides(fill=F) +
-    theme_bw()
+    theme(text = element_text(size=22)) 
 
 ```
 
@@ -713,16 +683,15 @@ block_plot_prior <- ggplot(aes(x=block, y=mean_accuracy, color = condition),
                         color = condition), 
                     size=0.6) +
     geom_hline(yintercept = 0.5, linetype = "dashed") +
-    geom_line() +
+    geom_line(aes(group = condition), size = 1.5, data = ms_prior_block) +
     facet_grid(.~category_type) +
-    scale_x_discrete() +
-    scale_y_continuous(limits=c(0.4,1.0)) +
+    scale_y_continuous(limits=c(0.6,0.9)) +
     scale_color_solarized() +
+    scale_x_continuous(limits = c(0.5, 3), breaks = c(1, 2)) + 
     ylab("Mean Accuracy") +
     xlab("Block") +
     guides(color = F) +
-    theme(text = element_text(size=16)) +
-    theme_bw()
+    theme(text = element_text(size=22)) 
 
 direct.label(block_plot_prior, list(last.bumpup, hjust = -0.5))
 ```
@@ -748,7 +717,7 @@ ggplot(aes(x=as.factor(block), y=mean_accuracy, color = order, group = as.factor
     facet_grid(category_type~condition) +
     xlab("Block") +
     ylab("Mean Accuracy") +
-    theme(text = element_text(size=16)) +
+    theme(text = element_text(size=22)) +
     scale_color_solarized()
 ```
 
