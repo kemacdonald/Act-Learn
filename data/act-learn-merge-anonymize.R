@@ -1,5 +1,4 @@
 # ACT-Learn Merge and anonymize script
-
 rm(list=ls())
 library(dplyr)
 library(magrittr)

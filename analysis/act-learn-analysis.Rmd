@@ -105,10 +105,12 @@ df_rep <- df %>% filter(experiment == "replication_1a")
 ```{r}
 ms_rep <- df_rep %>%
     filter(trial_type == "test") %>%
-    group_by(condition, category_type) %>%
-    summarise(mean_accuracy = mean(correct),
-              ci_high = ci.high(correct),
-              ci_low = ci.low(correct))
+    group_by(condition, category_type, subids) %>%
+    summarise(ss_accuracy = mean(correct)) %>% 
+    group_by(condition, category_type) %>% 
+    summarise(mean_accuracy = mean(ss_accuracy),
+              ci_high = ci.high(ss_accuracy),
+              ci_low = ci.low(ss_accuracy))
 
 
 ggplot(aes(x=condition, y=mean_accuracy), data=ms_rep) + 
@@ -118,7 +120,7 @@ ggplot(aes(x=condition, y=mean_accuracy), data=ms_rep) +
                    size=0.6,
                    position=position_dodge(width=0.9)) + 
     facet_grid(.~category_type) +
-    coord_cartesian(ylim=c(0.6,0.9)) +
+    coord_cartesian(ylim=c(0.6,0.95)) +
     scale_fill_solarized() +
     ylab("Mean Accuracy") +
     xlab("Condition") +
@@ -133,10 +135,12 @@ ggplot(aes(x=condition, y=mean_accuracy), data=ms_rep) +
 ```{r}
 ms_rep_block <- df_rep %>%
     filter(trial_type == "test") %>%
-    group_by(condition, category_type, block) %>%
-    summarise(mean_accuracy = mean(correct, na.rm=T),
-              ci_high = ci.high(correct),
-              ci_low = ci.low(correct))
+    group_by(condition, category_type, block, subids) %>%
+    summarise(ss_accuracy = mean(correct, na.rm=T)) %>% 
+    group_by(condition, category_type, block) %>% 
+    summarise(mean_accuracy = mean(ss_accuracy),
+              ci_high = ci.high(ss_accuracy),
+              ci_low = ci.low(ss_accuracy))
 
 block_plot_exp1 <- ggplot(aes(x=block, y=mean_accuracy, color = condition), 
                           data=filter(ms_rep_block, category_type == "Rule-Based")) +
@@ -166,16 +170,17 @@ ms_conf <- df_rep %>%
     filter(trial_type == "test", confidence != is.na(confidence)) %>%
     mutate(conf_level = cut(confidence, 4, 
                             labels = c("0%-25%", "25%-50%", "50%-75%", "75%-100%"))) %>%
-    group_by(condition, conf_level) %>%
-    summarise(mean_correct = mean(correct), 
-              ci_high = ci.high(correct),
-              ci_low = ci.low(correct))
+    group_by(condition, conf_level, subids) %>%
+    summarise(ss_correct = mean(correct)) %>% 
+    group_by(condition, conf_level) %>% 
+    summarise(mean_correct = mean(ss_correct),
+              ci_high = ci.high(ss_correct),
+              ci_low = ci.low(ss_correct))
 
 ss_conf <- df_rep %>%
     filter(trial_type == "test", confidence != is.na(confidence)) %>%
     mutate(conf_level = cut(confidence, 4, 
                             labels = c("0%-25%", "25%-50%", "50%-75%", "75%-100%")))
-
 ```
 
 ```{r}
@@ -219,11 +224,13 @@ Get mean accuracy for each condition and category type
 
 ```{r}
 ms_sequence <- df_sequence %>%
-    filter(trial_type == "test") %>%
-    group_by(condition, category_type) %>%
-    summarise(mean_accuracy = mean(correct),
-              ci_high = ci.high(correct),
-              ci_low = ci.low(correct))
+    filter(trial_type == "test", understand != "No") %>%
+    group_by(condition, category_type, subids) %>%
+    summarise(ss_accuracy = mean(correct)) %>% 
+    group_by(condition, category_type) %>% 
+    summarise(mean_accuracy = mean(ss_accuracy),
+              ci_high = ci.high(ss_accuracy),
+              ci_low = ci.low(ss_accuracy))
 ```
 
 Plot.
@@ -254,15 +261,18 @@ Next, we analyze accuracy across the two blocks.
 ```{r acc by block, echo=F}
 ms_block_sequence <- df_sequence %>%
     filter(trial_type == "test", condition %in% c("RA", "AR")) %>%
-    group_by(condition, block, category_type) %>%
-    summarise(mean_accuracy = mean(correct),
-              ci_high = ci.high(correct),
-              ci_low = ci.low(correct))
+    group_by(condition, block, category_type, subids) %>%
+    summarise(ss_accuracy = mean(correct)) %>% 
+    group_by(condition, block, category_type) %>% 
+    summarise(mean_accuracy = mean(ss_accuracy),
+              ci_high = ci.high(ss_accuracy),
+              ci_low = ci.low(ss_accuracy))
 ```
 
 ```{r acc by block plot, echo=F}
 block_plot_exp1 <- ggplot(aes(x=as.factor(block), y=mean_accuracy, color = condition), data=ms_block_sequence) +
-    geom_pointrange(aes(ymin=mean_accuracy - ci_low, ymax=mean_accuracy + ci_high), size=0.6) +
+    geom_pointrange(aes(ymin=mean_accuracy - ci_low, ymax=mean_accuracy + ci_high), 
+                    size=0.6, position = position_jitter(width = 0.2)) +
     geom_hline(yintercept = 0.5, linetype = "dashed") +
     geom_line(aes(group = condition), data = ms_block_sequence) +
     geom_smooth(aes(color = condition), method = "lm", se=F) +
@@ -302,7 +312,6 @@ df_sequence %<>% mutate(order_rule_based = ifelse(order == "order1" &
                                                 NA)))
 ```
 
-
 ```{r acc by block and dimension, echo=F}
 ms_block_order_sequence <- df_sequence %>%
     filter(trial_type == "test") %>%
@@ -317,7 +326,8 @@ ms_block_order_sequence <- df_sequence %>%
 ### Rule-Based category structure
 
 ```{r acc by block and dim plot, echo=F}
-block_plot2_sequence <- ggplot(aes(x=as.factor(block_factor), y=mean_accuracy, color = condition, group = condition), 
+block_plot2_sequence <- ggplot(aes(x=as.factor(block_factor), y=mean_accuracy, 
+                                   color = condition, group = condition), 
        data = filter(ms_block_order_sequence, category_type == "Rule-Based")) +
     geom_point() +
     geom_smooth(aes(color = condition), method = "lm", se=F) +
@@ -341,7 +351,8 @@ Also, there seems to be some between subjects variation here -- could this expla
 ### Information Integration category structure 
 
 ```{r acc by block and dim plot II, echo=F}
-block_plot3_sequence <- ggplot(aes(x=block_factor, y=mean_accuracy, color = condition, group = condition),
+block_plot3_sequence <- ggplot(aes(x=as.factor(block_factor), 
+                                   y=mean_accuracy, color = condition, group = condition),
        data = filter(ms_block_order_sequence, category_type == "Info-Integration")) +
     geom_point() +
     geom_line() +
@@ -430,10 +441,12 @@ Now get the average distance across subjects
 
 ```{r}
 ms_sampling_exp1 <- df_sampling_exp1 %>%
-    group_by(condition, category_type) %>%
-    summarize(mean_samp_dist = mean(samp_dist_odb, na.rm = T),
-              ci_high = ci.high(samp_dist_odb),
-              ci_low = ci.low(samp_dist_odb))
+    group_by(condition, category_type, subids) %>%
+    summarise(ss_samp_dist = mean(samp_dist_odb, na.rm = T)) %>% 
+    group_by(condition, category_type) %>% 
+    summarise(mean_samp_dist = mean(ss_samp_dist),
+              ci_high = ci.high(ss_samp_dist),
+              ci_low = ci.low(ss_samp_dist))
 ```
 
 Plot.
@@ -506,34 +519,9 @@ b_exp1 <- ggplot(aes(x=mean_samp_dist, y=mean_accuracy_active_block),
 gridExtra::grid.arrange(a_exp1, b_exp1, ncol = 2)
 ```
 
-## Individual accuracy across blocks: consistency analysis
-
-```{r, fig.height=9, fig.width=14}
-ss_mean_acc_explore_exp1 <- df_exp1 %>%
-    filter(trial_type == "test", block == 1 | block == 2) %>%
-    group_by(subids, condition, block, order, category_type) %>%
-    summarise(mean_accuracy = mean(correct),
-              ci_high_acc = ci.high(correct),
-              ci_low_acc = ci.low(correct))
-```
-
-Plot.
-
-```{r}
-qplot(x=as.factor(block), y=mean_accuracy, data=ss_mean_acc_explore_exp1, 
-      color = order, group = as.factor(subids)) +
-    geom_line() +
-    geom_smooth(aes(group=1), method = "lm", se = F, color = "red", size = 2) +
-    facet_grid(category_type~condition) +
-    xlab("Block") +
-    ylab("Mean Accuracy") +
-    theme(text = element_text(size=16)) +
-    scale_color_solarized()
-```
-
 There is a different overall pattern of accuracy performance across blocks by condition. Receptive-first learners show larger growth compared to Active-first learners. 
 
-## Experiment 1: Models
+## Models
 
 ### Accuracy on the trial-level based on condition and block
 
