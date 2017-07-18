@@ -19,12 +19,12 @@ output: cogsci2016::cogsci_paper
 
 ```{r global_options, include=FALSE}
 rm(list=ls())
-knitr::opts_chunk$set(fig.width=3, fig.height=3, fig.crop = F, fig.pos = "tb", fig.path='figs/',
-                      echo=F, warning=F, cache=T, message=F, sanitize = T)
+knitr::opts_chunk$set(fig.width=3, fig.height=3, fig.crop = F, fig.pos = "tb", 
+                      fig.path='figs/', echo=F, warning=F, cache=T, message=F, sanitize = T)
 
 source("../../analysis/helpers/useful.R")
-library(compute.es)
-library(pwr)
+#library(compute.es)
+#library(pwr)
 library(langcog)
 library(dplyr)
 library(magrittr)
@@ -352,23 +352,27 @@ ms_rep1b_block <- ss_rep_1b_block %>%
             ci_high = ci.high(ss_accuracy),
             ci_low = ci.low(ss_accuracy))
 
+levels(ms_rep1b_block$condition_short) <- c("A", "PA", "AP", "P", "Y")
+ms_rep1b_block$condition_short <- factor(ms_rep1b_block$condition_short, levels = c("A", "RA", "AR", "Y", "P"))
+
+
 ggplot(aes(x=as.factor(block), y=mean_accuracy), 
-                          data=ms_rep1b_block) +
-    geom_pointrange(aes(ymin=mean_accuracy - ci_low, ymax=mean_accuracy + ci_high, color = condition_short), 
-                    size=0.4, position = position_jitter(width = 0.11),
-                    data = ms_rep1b_block) +
-    geom_line(aes(group = condition_short, color = condition_short), size=1, 
-              data = ms_rep1b_block) +
-     geom_dl(aes(label = condition_short, color = condition_short), 
-            data = ms_rep1b_block, 
-            method = list(last.bumpup, hjust = -0.5)) +
-    facet_grid(.~category_type) +
-    scale_y_continuous(limits=c(0.5,0.9)) +
-    scale_color_solarized() +
-    ylab("Mean Accuracy") +
-    xlab("Block") +
-    guides(color = F) +
-    theme(text = element_text(size=12)) 
+       data=ms_rep1b_block) +
+  geom_pointrange(aes(ymin=mean_accuracy - ci_low, ymax=mean_accuracy + ci_high, color = condition_short), 
+                  size=0.4, position = position_jitter(width = 0.11),
+                  data = ms_rep1b_block) +
+  geom_line(aes(group = condition_short, color = condition_short), size=1, 
+            data = ms_rep1b_block) +
+  geom_dl(aes(label = condition_short, color = condition_short), 
+          data = ms_rep1b_block, 
+          method = list(last.bumpup, hjust = -0.5)) +
+  facet_grid(.~category_type) +
+  scale_y_continuous(limits=c(0.5,0.9)) +
+  scale_color_solarized() +
+  ylab("Mean Accuracy") +
+  xlab("Block") +
+  guides(color = F) +
+  theme(text = element_text(size=12)) 
 
 
 ms_rep_1b <- ss_rep_1b %>% 
@@ -548,7 +552,8 @@ b
 df_rep1b %<>% mutate(condition = factor(condition)) 
 
 
-mixed_model_exp1b.3way <- glmer(correct ~ condition * category_type * as.factor(block) + (1|subids), 
+mixed_model_exp1b.3way <- glmer(correct ~ condition * category_type * as.factor(block) 
+                                + (1|subids), 
                            data=filter(df_rep1b, trial_type=="test"), 
                            nAGQ = 1,
                            control = glmerControl(optimizer = "bobyqa"),
@@ -675,6 +680,26 @@ samp_cond_model_seq <- lmer(samp_dist_odb ~ condition * category_type + (1|subid
                             data=df_sampling_seq)
 ```
 
+```{r quality of sampling plot}
+ms_seq_sampling <- ss_all_seq %>% 
+  filter(condition %in% c("AR", "RA")) %>% 
+  group_by(condition, category_type) %>% 
+  multi_boot_standard(column = "mean_samp_dist")
+
+levels(ms_seq_sampling$condition) <- c("AA", "PA", "AP", "RR", "YY")
+
+sampling_plot_seq <- ggplot(data = ms_seq_sampling, 
+                            aes(x = condition, y = mean, fill = condition)) +
+  geom_line(group = "identity") +
+  geom_pointrange(size = 1, aes(ymin = ci_lower, ymax = ci_upper)) +
+  ylab("Mean Sample Distance") +
+  xlab("Condition") +
+  facet_grid(.~category_type) +
+  scale_fill_solarized() +
+  theme(text = element_text(size=20)) +
+  guides(fill=F, alpha=F ,color = F) 
+```
+
 To test which condition produced higher quality sampling behavior, we fit a linear mixed model predicting sample quality as a function of condition and category type. We found that PA learners generated better samples than AP learners ($\beta$ = `r round(summary(samp_cond_model_seq)$coef[2], 2)`, $t$ = `r round(summary(samp_cond_model_seq)$coef[2,3], 2)`), and we found that sampling quality was lower in the II category ($\beta$ = `r round(summary(samp_cond_model_seq)$coef[3], 2)`, $t$ = `r round(summary(samp_cond_model_seq)$coef[3,3], 2)`). We also we fit a linear model predicting mean classification accuracy based on the mean distance of samples from the target category boundary, and replicate the finding from Experiments 1a and 1b: that higher quality sampling was related to higher accuracy scores ($\beta$ = .00006, $p$ = `r round(summary(samp_acc_model_seq)$coef[2,4], 2)`). 
 
 ### Classification accuracy for all sequences
@@ -732,16 +757,17 @@ ms_train_time <- ss_train_time %>%
     group_by(condition, block) %>% 
     langcog::multi_boot_standard(column = "ss_rt") 
 
+levels(ms_train_time$condition) <- c("AA", "PA", "AP", "RR")
+
 time_plot <- ggplot(data = filter(ms_train_time, 
-                                  (block == 1 & condition == "AR") | 
-                                      (block == 2 & condition == "RA")) , 
-                                  aes(x = condition, y = mean, fill = condition)) +
-    geom_bar(stat = "identity") +
-    geom_linerange(size = 1, aes(ymin = ci_lower, ymax = ci_upper)) +
+                                  (block == 1 & condition == "AP") | 
+                                      (block == 2 & condition == "PA")) , 
+                                  aes(x = condition, y = mean)) +
+  geom_line(group = "identity") +
+    geom_pointrange(size = 1, aes(ymin = ci_lower, ymax = ci_upper)) +
     ylab("Mean Training Time (sec)") +
     xlab("Condition") +
     ylim(0,19) +
-    scale_fill_solarized() +
     theme(text = element_text(size=20)) +
     guides(fill=F, alpha=F ,color = F) 
 ```
